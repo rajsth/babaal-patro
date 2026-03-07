@@ -9,11 +9,15 @@ import 'screens/converter_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Push today's date to the Android home screen widget.
   HomeWidgetUpdater.update();
+  // Initialise local notifications and request runtime permissions.
+  await NotificationService.instance.init();
+  await NotificationService.instance.requestPermissions();
   runApp(const ProviderScope(child: NepaliCalendarApp()));
 }
 
@@ -82,7 +86,7 @@ class _AppShellState extends State<AppShell> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _navItem(Icons.calendar_month_outlined, Icons.calendar_month, 'पात्रो', 0),
-            _navItem(Icons.event_note_outlined, Icons.event_note, 'घटनाहरू', 1),
+            _navItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'स्मरण', 1),
             _navItem(Icons.swap_horiz_outlined, Icons.swap_horiz, 'रूपान्तरण', 2),
             _navItem(Icons.settings_outlined, Icons.settings, 'सेटिङ्स', 3),
           ],
