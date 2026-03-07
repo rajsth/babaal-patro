@@ -40,9 +40,11 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
   }
 
   Future<void> removeReminder(String id) async {
-    await NotificationService.instance.cancelReminder(id);
     state = state.where((r) => r.id != id).toList();
     await _persist();
+    try {
+      await NotificationService.instance.cancelReminder(id);
+    } catch (_) {}
   }
 
   /// Flips isEnabled and immediately reschedules or cancels the notification.
