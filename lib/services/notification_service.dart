@@ -116,7 +116,7 @@ class NotificationService {
       reminder.description.isEmpty ? null : reminder.description,
       tzDt,
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.alarmClock,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
@@ -138,7 +138,7 @@ class NotificationService {
       reminder.description.isEmpty ? null : reminder.description,
       tz.TZDateTime.from(dt, tz.local),
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.alarmClock,
       matchDateTimeComponents: DateTimeComponents.time,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -161,7 +161,7 @@ class NotificationService {
       reminder.description.isEmpty ? null : reminder.description,
       tz.TZDateTime.from(dt, tz.local),
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.alarmClock,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
