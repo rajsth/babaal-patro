@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="10dp">
+
+    <!-- ===== TOP: HERO TIME DISPLAY ===== -->
+
+    <!-- Hours:Minutes — massive, bold -->
+    <TextClock
+        android:id="@+id/tc_nepal_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:timeZone="Asia/Kathmandu"
+        android:format12Hour="hh:mm"
+        android:format24Hour="HH:mm"
+        android:textColor="#FFFFFFFF"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-black"
+        android:includeFontPadding="false" />
+
+    <!-- AM/PM — next to time -->
+    <TextClock
+        android:id="@+id/tc_nepal_ampm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/tc_nepal_time"
+        android:layout_alignTop="@id/tc_nepal_time"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="6dp"
+        android:timeZone="Asia/Kathmandu"
+        android:format12Hour="a"
+        android:format24Hour=""
+        android:textColor="#FFB388FF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali day number — accent, top right -->
+    <TextView
+        android:id="@+id/tv_nepali_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:text="--"
+        android:textColor="#FFB388FF"
+        android:textSize="42sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+    <!-- ===== BOTTOM: DATE INFO ROW ===== -->
+
+    <!-- Thin separator line -->
+    <ImageView
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_above="@id/tv_ad_date"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/widget_accent_divider"
+        android:contentDescription="separator" />
+
+    <!-- AD date — left aligned, anchored to bottom -->
+    <TextView
+        android:id="@+id/tv_ad_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:text="---"
+        android:textColor="#77FFFFFF"
+        android:textSize="12sp"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali day name -->
+    <TextView
+        android:id="@+id/tv_nepali_day_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:text="---"
+        android:textColor="#99FFFFFF"
+        android:textSize="13sp"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali month + year — right aligned -->
+    <TextView
+        android:id="@+id/tv_nepali_month_year"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:text="---"
+        android:textColor="#DDFFFFFF"
+        android:textSize="13sp"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+</RelativeLayout>
