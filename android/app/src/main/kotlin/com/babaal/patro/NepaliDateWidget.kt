@@ -1,4 +1,4 @@
-package com.nepali.calendar.nepali_calendar
+package com.babaal.patro
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
