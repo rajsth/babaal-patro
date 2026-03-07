@@ -7,6 +7,7 @@ import 'providers/theme_provider.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/converter_screen.dart';
 import 'screens/events_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
@@ -53,6 +54,7 @@ class _AppShellState extends State<AppShell> {
     CalendarScreen(),
     EventsScreen(),
     ConverterScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -70,28 +72,63 @@ class _AppShellState extends State<AppShell> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        backgroundColor: colors.surfaceVariant,
-        indicatorColor: AppTheme.accent.withValues(alpha: 0.2),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month, color: AppTheme.accent),
-            label: 'पात्रो',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.event_note_outlined),
-            selectedIcon: Icon(Icons.event_note, color: AppTheme.accent),
-            label: 'घटनाहरू',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.swap_horiz_outlined),
-            selectedIcon: Icon(Icons.swap_horiz, color: AppTheme.accent),
-            label: 'रूपान्तरण',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        color: colors.surfaceVariant,
+        padding: EdgeInsets.only(
+          top: 8,
+          bottom: MediaQuery.of(context).padding.bottom + 8,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navItem(Icons.calendar_month_outlined, Icons.calendar_month, 'पात्रो', 0),
+            _navItem(Icons.event_note_outlined, Icons.event_note, 'घटनाहरू', 1),
+            _navItem(Icons.swap_horiz_outlined, Icons.swap_horiz, 'रूपान्तरण', 2),
+            _navItem(Icons.settings_outlined, Icons.settings, 'सेटिङ्स', 3),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(
+    IconData icon,
+    IconData activeIcon,
+    String label,
+    int index,
+  ) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 72),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: AppTheme.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              )
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              size: 22,
+              color: isSelected ? AppTheme.accent : null,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppTheme.accent : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -92,6 +92,7 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
             TextField(
               controller: _controller,
               autofocus: true,
+              maxLength: 200,
               maxLines: 3,
               minLines: 1,
               textCapitalization: TextCapitalization.sentences,

@@ -99,13 +99,22 @@ class _ConverterScreenState extends State<ConverterScreen>
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('मिति रूपान्तरण'),
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Padding(
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: Text(
+              'मिति रूपान्तरण',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
               height: 42,
@@ -134,16 +143,19 @@ class _ConverterScreenState extends State<ConverterScreen>
               ),
             ),
           ),
-        ),
-      ),
-      body: SelectionArea(
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildAdToBsTab(colors),
-            _buildBsToAdTab(colors),
-          ],
-        ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: SelectionArea(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAdToBsTab(colors),
+                  _buildBsToAdTab(colors),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -49,10 +49,6 @@ class EventsScreen extends ConsumerWidget {
           });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('घटनाहरू'),
-        centerTitle: false,
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -64,7 +60,23 @@ class EventsScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: allEvents.isEmpty
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                'घटनाहरू',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+            Expanded(
+              child: allEvents.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -127,6 +139,10 @@ class EventsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -426,7 +442,9 @@ class _AddEventWithDateDialogState
       backgroundColor: colors.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-      child: SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -517,6 +535,7 @@ class _AddEventWithDateDialogState
               TextField(
                 controller: _controller,
                 autofocus: true,
+                maxLength: 200,
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
@@ -669,6 +688,7 @@ class _AddEventWithDateDialogState
             ],
           ),
         ),
+      ),
       ),
     );
   }

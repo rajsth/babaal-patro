@@ -67,13 +67,18 @@ class EventsNotifier extends StateNotifier<Map<String, List<CalendarEvent>>> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_storageKey);
     if (raw == null) return;
-    final List<dynamic> list = jsonDecode(raw);
-    final events = list.map((e) => CalendarEvent.fromJson(e)).toList();
-    final map = <String, List<CalendarEvent>>{};
-    for (final event in events) {
-      map.putIfAbsent(event.dateKey, () => []).add(event);
+    try {
+      final List<dynamic> list = jsonDecode(raw);
+      final events = list.map((e) => CalendarEvent.fromJson(e)).toList();
+      final map = <String, List<CalendarEvent>>{};
+      for (final event in events) {
+        map.putIfAbsent(event.dateKey, () => []).add(event);
+      }
+      _updateState(map);
+    } catch (_) {
+      // Corrupted data — clear it to prevent repeated crashes.
+      await prefs.remove(_storageKey);
     }
-    _updateState(map);
   }
 
   Future<void> _persist() async {
