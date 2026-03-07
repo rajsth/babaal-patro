@@ -18,20 +18,11 @@ class CalendarHeader extends ConsumerWidget {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AD date range subtitle
-          Text(
-            state.adRangeSubtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Bottom row: month/year + dropdown (left) | today + nav arrows (right)
+          // BS month/year row with dropdown + today + nav arrows
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -115,6 +106,12 @@ class CalendarHeader extends ConsumerWidget {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 2),
+          // AD date range subtitle
+          Text(
+            state.adRangeSubtitle,
+            style: TextStyle(fontSize: 11, color: colors.textSecondary),
           ),
         ],
       ),

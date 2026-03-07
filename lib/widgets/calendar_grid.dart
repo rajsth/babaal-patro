@@ -46,7 +46,7 @@ class CalendarGrid extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.85,
+        childAspectRatio: 1.0,
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
