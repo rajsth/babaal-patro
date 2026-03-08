@@ -36,6 +36,12 @@ target 'Runner' do
   end
 end
 
+target 'NepaliDateWidgetExtension' do
+  platform :ios, '14.0'
+  use_frameworks!
+  # No pods needed — widget reads from shared UserDefaults directly.
+end
+
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
