@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/nepali_date_helper.dart';
@@ -40,7 +40,7 @@ class MonthlyHolidays extends ConsumerWidget {
           const SizedBox(height: 8),
           ...sortedEntries.map((entry) => GestureDetector(
                 onTap: () {
-                  HapticFeedback.lightImpact();
+                  Haptic.light();
                   ref.read(calendarProvider.notifier).selectDay(entry.key);
                 },
                 behavior: HitTestBehavior.opaque,
