@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
-        android:label="बबाल पात्रो"
+        android:label="Babaal Patro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
