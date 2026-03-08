@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/app_theme.dart';
@@ -13,8 +15,10 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Push today's date to the Android home screen widget.
-  HomeWidgetUpdater.update();
+  // Push today's date to the Android home screen widget (Android only).
+  if (Platform.isAndroid) {
+    HomeWidgetUpdater.update();
+  }
   // Initialise local notifications and request runtime permissions.
   await NotificationService.instance.init();
   await NotificationService.instance.requestPermissions();
