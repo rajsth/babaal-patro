@@ -10,7 +10,7 @@ class S {
   static S of(bool isNepali) => isNepali ? _ne : _en;
 
   // ─── App Title ──────────────────────────────────────────────────────
-  String get appTitle => isNepali ? 'बबाल पात्रो' : 'Babaal Patro';
+  String get appTitle => isNepali ? 'बबाल पात्रो' : 'Babaal patro';
 
   // ─── Bottom Navigation ──────────────────────────────────────────────
   String get navCalendar => isNepali ? 'पात्रो' : 'Calendar';
