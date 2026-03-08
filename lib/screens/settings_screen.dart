@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -9,7 +11,7 @@ class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   void _showAccentColorPicker(
-      BuildContext context, WidgetRef ref, NepaliThemeColors colors) {
+      BuildContext context, WidgetRef ref, NepaliThemeColors colors, S s) {
     final currentIndex = ref.read(settingsProvider).accentColorIndex;
     showDialog(
       context: context,
@@ -41,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 14),
                     Text(
-                      'एक्सेन्ट रङ छान्नुहोस्',
+                      s.chooseAccentColor,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -97,7 +99,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              option.label,
+                              s.accentColorNames[index],
                               style: TextStyle(
                                 fontSize: 11,
                                 color: colors.textSecondary,
@@ -124,6 +126,8 @@ class SettingsScreen extends ConsumerWidget {
     final showGridBorder =
         ref.watch(settingsProvider.select((s) => s.showGridBorder));
     final user = ref.watch(authProvider);
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return SafeArea(
       child: ListView(
@@ -132,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Text(
-              'सेटिङ्स',
+              s.settings,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -145,28 +149,38 @@ class SettingsScreen extends ConsumerWidget {
           if (user == null)
             _SignInWarningTile(
               colors: colors,
+              s: s,
               onTap: () async {
                 final ok =
                     await ref.read(authProvider.notifier).signInWithGoogle();
                 if (!ok && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('साइन इन असफल भयो')),
+                    SnackBar(content: Text(s.signInFailed)),
                   );
                 }
               },
             )
           else
-            _AccountTile(user: user, colors: colors, ref: ref),
+            _AccountTile(user: user, colors: colors, ref: ref, s: s),
+          const SizedBox(height: 12),
+          // Language toggle
+          _SettingsTile(
+            icon: Icons.language_outlined,
+            title: s.language,
+            subtitle: isNepali ? s.nepali : s.english,
+            colors: colors,
+            onTap: () => ref.read(languageProvider.notifier).toggle(),
+          ),
           const SizedBox(height: 12),
           // Theme toggle
           _SettingsTile(
             icon: themeMode == ThemeMode.dark
                 ? Icons.light_mode_outlined
                 : Icons.dark_mode_outlined,
-            title: themeMode == ThemeMode.dark ? 'लाइट मोड' : 'डार्क मोड',
+            title: themeMode == ThemeMode.dark ? s.lightMode : s.darkMode,
             subtitle: themeMode == ThemeMode.dark
-                ? 'लाइट थिममा स्विच गर्नुहोस्'
-                : 'डार्क थिममा स्विच गर्नुहोस्',
+                ? s.switchToLight
+                : s.switchToDark,
             colors: colors,
             onTap: () => ref.read(themeProvider.notifier).toggle(),
           ),
@@ -177,9 +191,9 @@ class SettingsScreen extends ConsumerWidget {
                 ? Icons.grid_off_outlined
                 : Icons.grid_on_outlined,
             title: showGridBorder
-                ? 'ग्रिड बोर्डर हटाउनुहोस्'
-                : 'ग्रिड बोर्डर देखाउनुहोस्',
-            subtitle: 'क्यालेन्डर ग्रिडमा बोर्डर देखाउने/हटाउने',
+                ? s.hideGridBorder
+                : s.showGridBorder,
+            subtitle: s.gridBorderSubtitle,
             colors: colors,
             onTap: () =>
                 ref.read(settingsProvider.notifier).toggleGridBorder(),
@@ -195,10 +209,10 @@ class SettingsScreen extends ConsumerWidget {
                 shape: BoxShape.circle,
               ),
             ),
-            title: 'एक्सेन्ट रङ',
-            subtitle: 'एपको मुख्य रङ छान्नुहोस्',
+            title: s.accentColor,
+            subtitle: s.accentColorSubtitle,
             colors: colors,
-            onTap: () => _showAccentColorPicker(context, ref, colors),
+            onTap: () => _showAccentColorPicker(context, ref, colors, s),
           ),
         ],
       ),
@@ -208,9 +222,10 @@ class SettingsScreen extends ConsumerWidget {
 
 class _SignInWarningTile extends StatelessWidget {
   final NepaliThemeColors colors;
+  final S s;
   final VoidCallback onTap;
 
-  const _SignInWarningTile({required this.colors, required this.onTap});
+  const _SignInWarningTile({required this.colors, required this.s, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +258,7 @@ class _SignInWarningTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ब्याकअप छैन',
+                      s.noBackup,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -252,7 +267,7 @@ class _SignInWarningTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'साइन इन नगरेमा डाटा गुम्न सक्छ',
+                      s.dataLossWarning,
                       style: TextStyle(
                           fontSize: 12, color: colors.textSecondary),
                     ),
@@ -266,9 +281,9 @@ class _SignInWarningTile extends StatelessWidget {
                   color: AppTheme.accent,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'साइन इन',
-                  style: TextStyle(
+                child: Text(
+                  s.signIn,
+                  style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Colors.white),
@@ -286,11 +301,13 @@ class _AccountTile extends StatelessWidget {
   final dynamic user;
   final NepaliThemeColors colors;
   final WidgetRef ref;
+  final S s;
 
   const _AccountTile({
     required this.user,
     required this.colors,
     required this.ref,
+    required this.s,
   });
 
   @override
@@ -337,7 +354,7 @@ class _AccountTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.displayName as String? ?? 'प्रयोगकर्ता',
+                    user.displayName as String? ?? s.user,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -351,7 +368,7 @@ class _AccountTile extends StatelessWidget {
                           size: 11, color: Colors.green),
                       const SizedBox(width: 3),
                       Text(
-                        'सिंक भइरहेको छ',
+                        s.syncing,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.green.shade600,
@@ -365,8 +382,8 @@ class _AccountTile extends StatelessWidget {
             TextButton(
               onPressed: () => ref.read(authProvider.notifier).signOut(),
               child: Text(
-                'साइन आउट',
-                style: TextStyle(color: Colors.redAccent, fontSize: 13),
+                s.signOut,
+                style: const TextStyle(color: Colors.redAccent, fontSize: 13),
               ),
             ),
           ],

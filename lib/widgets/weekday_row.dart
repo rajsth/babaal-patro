@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
-import '../core/nepali_date_helper.dart';
+import '../core/app_localizations.dart';
+import '../providers/language_provider.dart';
 
-/// A single row showing the abbreviated Nepali day-of-week labels.
+/// A single row showing the abbreviated day-of-week labels.
 /// Saturday (last column) is highlighted red per Nepali convention.
-class WeekdayRow extends StatelessWidget {
+class WeekdayRow extends ConsumerWidget {
   const WeekdayRow({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final dayNames = S.of(isNepali).dayNames;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -30,7 +34,7 @@ class WeekdayRow extends StatelessWidget {
                       )
                     : null,
                 child: Text(
-                  NepaliDateHelper.dayNames[index],
+                  dayNames[index],
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
