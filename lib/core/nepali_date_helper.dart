@@ -1,4 +1,5 @@
 import 'package:nepali_utils/nepali_utils.dart';
+import 'app_localizations.dart';
 
 /// Pure utility class for Nepali (Bikram Sambat) date operations.
 /// Completely decoupled from UI — handles all date conversions,
@@ -16,6 +17,11 @@ class NepaliDateHelper {
         .split('')
         .map((d) => nepaliDigits[int.parse(d)])
         .join();
+  }
+
+  /// Returns Devanagari numerals if [isNepali] is true, else Arabic numerals.
+  static String localizedNumeral(int number, {bool isNepali = true}) {
+    return isNepali ? toNepaliNumeral(number) : number.toString();
   }
 
   // ─── Nepali Labels ───────────────────────────────────────────────
@@ -111,9 +117,11 @@ class NepaliDateHelper {
   }
 
   /// Returns the abbreviated weekday name for a given BS date.
-  static String weekdayName(int year, int month, int day) {
+  static String weekdayName(int year, int month, int day,
+      {bool isNepali = true}) {
     final nepDate = NepaliDateTime(year, month, day);
-    return dayFullNames[nepDate.weekday - 1];
+    final names = S.of(isNepali).dayFullNames;
+    return names[nepDate.weekday - 1];
   }
 
   /// Returns the number of trailing cells needed to complete the last row.
@@ -124,11 +132,13 @@ class NepaliDateHelper {
   }
 
   /// Returns the Nepali month name for a 1-indexed month.
-  static String monthName(int month) => monthNames[month - 1];
+  static String monthName(int month, {bool isNepali = true}) =>
+      S.of(isNepali).monthNames[month - 1];
 
-  /// Formatted header string: "बैशाख २०८१"
-  static String formattedMonthYear(int year, int month) {
-    return '${monthName(month)} ${toNepaliNumeral(year)}';
+  /// Formatted header string: "बैशाख २०८१" or "Baisakh 2081"
+  static String formattedMonthYear(int year, int month,
+      {bool isNepali = true}) {
+    return '${monthName(month, isNepali: isNepali)} ${localizedNumeral(year, isNepali: isNepali)}';
   }
 
   /// Checks if two NepaliDateTime values represent the same calendar day.

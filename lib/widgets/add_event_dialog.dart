@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../models/reminder.dart';
+import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
 
 /// Dialog for adding a new BS-based local-notification reminder.
@@ -114,6 +116,8 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
     final maxDay = _daysInMonth();
     if (_day > maxDay) _day = maxDay;
     final days = List.generate(maxDay, (i) => i + 1);
@@ -148,7 +152,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                   ),
                   const SizedBox(width: 14),
                   Text(
-                    'नयाँ स्मरण थप्नुहोस्',
+                    s.addNewReminder,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -160,11 +164,11 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
               const SizedBox(height: 22),
 
               // ── Title ────────────────────────────────────────────────
-              _sectionLabel('शीर्षक *', colors),
+              _sectionLabel(s.title, colors),
               const SizedBox(height: 6),
               _textField(
                 controller: _titleController,
-                hint: 'स्मरणको शीर्षक लेख्नुहोस्...',
+                hint: s.titleHint,
                 autofocus: true,
                 hasError: _showTitleError,
                 colors: colors,
@@ -182,7 +186,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                                 color: Theme.of(context).colorScheme.error),
                             const SizedBox(width: 5),
                             Text(
-                              'शीर्षक अनिवार्य छ',
+                              s.titleRequired,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Theme.of(context).colorScheme.error,
@@ -196,18 +200,18 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
               const SizedBox(height: 14),
 
               // ── Description ──────────────────────────────────────────
-              _sectionLabel('विवरण (ऐच्छिक)', colors),
+              _sectionLabel(s.descriptionOptional, colors),
               const SizedBox(height: 6),
               _textField(
                 controller: _descController,
-                hint: 'छोटो विवरण...',
+                hint: s.descriptionHint,
                 maxLines: 2,
                 colors: colors,
               ),
               const SizedBox(height: 18),
 
               // ── BS Date ──────────────────────────────────────────────
-              _sectionLabel('बि.सं. मिति', colors),
+              _sectionLabel(s.bsDate, colors),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -216,7 +220,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                     child: _dropdown(
                       value: _year,
                       items: _years,
-                      display: (v) => NepaliDateHelper.toNepaliNumeral(v),
+                      display: (v) => NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
                       onChanged: (v) => setState(() => _year = v!),
                       colors: colors,
                     ),
@@ -227,7 +231,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                     child: _dropdown(
                       value: _month,
                       items: _months,
-                      display: (v) => NepaliDateHelper.monthNames[v - 1],
+                      display: (v) => s.monthNames[v - 1],
                       onChanged: (v) => setState(() => _month = v!),
                       colors: colors,
                     ),
@@ -238,7 +242,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                     child: _dropdown(
                       value: days.contains(_day) ? _day : days.first,
                       items: days,
-                      display: (v) => NepaliDateHelper.toNepaliNumeral(v),
+                      display: (v) => NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
                       onChanged: (v) => setState(() => _day = v!),
                       colors: colors,
                     ),
@@ -248,7 +252,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
               const SizedBox(height: 14),
 
               // ── Time ─────────────────────────────────────────────────
-              _sectionLabel('समय', colors),
+              _sectionLabel(s.time, colors),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: _pickTime,
@@ -282,12 +286,12 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
               const SizedBox(height: 14),
 
               // ── Category ─────────────────────────────────────────────
-              _sectionLabel('श्रेणी', colors),
+              _sectionLabel(s.category, colors),
               const SizedBox(height: 8),
               _PillSelector<ReminderCategory>(
                 values: ReminderCategory.values,
                 selected: _category,
-                label: (v) => v.label,
+                label: (v) => v.localizedLabel(isNepali),
                 icon: (v) => v.icon,
                 onTap: (v) => setState(() => _category = v),
                 colors: colors,
@@ -295,24 +299,24 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
               const SizedBox(height: 16),
 
               // ── Recurrence ───────────────────────────────────────────
-              _sectionLabel('दोहोर्याउने', colors),
+              _sectionLabel(s.recurrence, colors),
               const SizedBox(height: 8),
               _PillSelector<ReminderRecurrence>(
                 values: ReminderRecurrence.values,
                 selected: _recurrence,
-                label: (v) => v.label,
+                label: (v) => v.localizedLabel(isNepali),
                 onTap: (v) => setState(() => _recurrence = v),
                 colors: colors,
               ),
               const SizedBox(height: 16),
 
               // ── Alert offset ─────────────────────────────────────────
-              _sectionLabel('सूचना कहिले', colors),
+              _sectionLabel(s.alertWhen, colors),
               const SizedBox(height: 8),
               _PillSelector<AlertOffset>(
                 values: AlertOffset.values,
                 selected: _alertOffset,
-                label: (v) => v.label,
+                label: (v) => v.localizedLabel(isNepali),
                 onTap: (v) => setState(() => _alertOffset = v),
                 colors: colors,
               ),
@@ -331,7 +335,7 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                         side: BorderSide(color: colors.divider),
                       ),
                       child: Text(
-                        'रद्द',
+                        s.cancel,
                         style: TextStyle(
                             color: colors.textSecondary,
                             fontSize: 15,
@@ -349,9 +353,9 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text(
-                        'सुरक्षित गर्नुहोस्',
-                        style: TextStyle(
+                      child: Text(
+                        s.save,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w600),

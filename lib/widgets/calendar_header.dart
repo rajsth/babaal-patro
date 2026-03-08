@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../providers/calendar_provider.dart';
+import '../providers/language_provider.dart';
 import 'month_year_picker.dart';
 
 /// Displays the current Nepali month/year with navigation arrows,
@@ -16,6 +18,8 @@ class CalendarHeader extends ConsumerWidget {
     final state = ref.watch(calendarProvider);
     final notifier = ref.read(calendarProvider.notifier);
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
@@ -33,7 +37,7 @@ class CalendarHeader extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      state.headerTitle,
+                      state.localizedHeaderTitle(isNepali),
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -65,7 +69,7 @@ class CalendarHeader extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'आज',
+                        s.today,
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.accentLight,
@@ -81,7 +85,7 @@ class CalendarHeader extends ConsumerWidget {
                       notifier.previousMonth();
                     },
                     icon: const Icon(Icons.chevron_left, size: 26),
-                    tooltip: 'अघिल्लो महिना',
+                    tooltip: s.previousMonth,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -95,7 +99,7 @@ class CalendarHeader extends ConsumerWidget {
                       notifier.nextMonth();
                     },
                     icon: const Icon(Icons.chevron_right, size: 26),
-                    tooltip: 'अर्को महिना',
+                    tooltip: s.nextMonth,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(

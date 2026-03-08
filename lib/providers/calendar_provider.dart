@@ -41,8 +41,12 @@ class CalendarState {
     );
   }
 
-  /// Formatted header for the current month: "बैशाख २०८२"
+  /// Formatted header for the current month: "बैशाख २०८२" or "Baisakh 2082"
   String get headerTitle => NepaliDateHelper.formattedMonthYear(year, month);
+
+  /// Language-aware header title.
+  String localizedHeaderTitle(bool isNepali) =>
+      NepaliDateHelper.formattedMonthYear(year, month, isNepali: isNepali);
 
   /// AD month range string for the current BS month (e.g., "Mar - Apr 2026").
   String get adRangeSubtitle {
