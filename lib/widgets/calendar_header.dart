@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../providers/calendar_provider.dart';
@@ -77,7 +77,7 @@ class CalendarHeader extends ConsumerWidget {
                   const SizedBox(width: 4),
                   IconButton(
                     onPressed: () {
-                      HapticFeedback.lightImpact();
+                      Haptic.light();
                       notifier.previousMonth();
                     },
                     icon: const Icon(Icons.chevron_left, size: 26),
@@ -91,7 +91,7 @@ class CalendarHeader extends ConsumerWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      HapticFeedback.lightImpact();
+                      Haptic.light();
                       notifier.nextMonth();
                     },
                     icon: const Icon(Icons.chevron_right, size: 26),

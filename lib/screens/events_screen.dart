@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import '../core/app_theme.dart';
@@ -100,7 +100,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                               .read(remindersProvider.notifier)
                               .toggleReminder(reminder.id),
                           onDelete: () {
-                            HapticFeedback.lightImpact();
+                            Haptic.light();
                             ref
                                 .read(remindersProvider.notifier)
                                 .removeReminder(reminder.id);
@@ -146,7 +146,7 @@ class _FilterBar extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () {
-                HapticFeedback.selectionClick();
+                Haptic.selection();
                 onSelect(cat);
               },
               child: AnimatedContainer(
@@ -397,7 +397,7 @@ class _ReminderTile extends StatelessWidget {
                 Switch(
                   value: reminder.isEnabled,
                   onChanged: (_) {
-                    HapticFeedback.selectionClick();
+                    Haptic.selection();
                     onToggle();
                   },
                   activeThumbColor: AppTheme.accent,
