@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../providers/calendar_provider.dart';
@@ -185,10 +186,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _onHorizontalDragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
     if (velocity > 300) {
-      HapticFeedback.lightImpact();
+      Haptic.light();
       ref.read(calendarProvider.notifier).previousMonth();
     } else if (velocity < -300) {
-      HapticFeedback.lightImpact();
+      Haptic.light();
       ref.read(calendarProvider.notifier).nextMonth();
     }
   }
