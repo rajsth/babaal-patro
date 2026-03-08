@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
+import '../providers/language_provider.dart';
 
 /// Screen for converting dates between AD (Gregorian) and BS (Bikram Sambat).
-class ConverterScreen extends StatefulWidget {
+class ConverterScreen extends ConsumerStatefulWidget {
   const ConverterScreen({super.key});
 
   @override
-  State<ConverterScreen> createState() => _ConverterScreenState();
+  ConsumerState<ConverterScreen> createState() => _ConverterScreenState();
 }
 
-class _ConverterScreenState extends State<ConverterScreen>
+class _ConverterScreenState extends ConsumerState<ConverterScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -54,24 +57,28 @@ class _ConverterScreenState extends State<ConverterScreen>
   }
 
   void _convertAdToBs() {
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
     try {
       final adDate = DateTime(_adYear, _adMonth, _adDay);
       final nepaliDate = adDate.toNepaliDateTime();
       setState(() {
         _adToBsResult =
-            '${NepaliDateHelper.toNepaliNumeral(nepaliDate.day)} '
-            '${NepaliDateHelper.monthName(nepaliDate.month)} '
-            '${NepaliDateHelper.toNepaliNumeral(nepaliDate.year)}, '
-            '${NepaliDateHelper.dayFullNames[nepaliDate.weekday - 1]}';
+            '${NepaliDateHelper.localizedNumeral(nepaliDate.day, isNepali: isNepali)} '
+            '${NepaliDateHelper.monthName(nepaliDate.month, isNepali: isNepali)} '
+            '${NepaliDateHelper.localizedNumeral(nepaliDate.year, isNepali: isNepali)}, '
+            '${s.dayFullNames[nepaliDate.weekday - 1]}';
       });
     } catch (_) {
       setState(() {
-        _adToBsResult = 'अमान्य मिति';
+        _adToBsResult = s.invalidDate;
       });
     }
   }
 
   void _convertBsToAd() {
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
     try {
       final adDate =
           NepaliDateTime(_bsYear, _bsMonth, _bsDay).toDateTime();
@@ -90,7 +97,7 @@ class _ConverterScreenState extends State<ConverterScreen>
       });
     } catch (_) {
       setState(() {
-        _bsToAdResult = 'अमान्य मिति';
+        _bsToAdResult = s.invalidDate;
       });
     }
   }
@@ -98,6 +105,8 @@ class _ConverterScreenState extends State<ConverterScreen>
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return SafeArea(
       child: Column(
@@ -106,7 +115,7 @@ class _ConverterScreenState extends State<ConverterScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Text(
-              'मिति रूपान्तरण',
+              s.dateConversion,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -149,8 +158,8 @@ class _ConverterScreenState extends State<ConverterScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildAdToBsTab(colors),
-                  _buildBsToAdTab(colors),
+                  _buildAdToBsTab(colors, s),
+                  _buildBsToAdTab(colors, s, isNepali),
                 ],
               ),
             ),
@@ -160,7 +169,7 @@ class _ConverterScreenState extends State<ConverterScreen>
     );
   }
 
-  Widget _buildAdToBsTab(NepaliThemeColors colors) {
+  Widget _buildAdToBsTab(NepaliThemeColors colors, S s) {
     final maxDay = _daysInAdMonth(_adYear, _adMonth);
     if (_adDay > maxDay) _adDay = maxDay;
 
@@ -198,7 +207,7 @@ class _ConverterScreenState extends State<ConverterScreen>
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'AD मिति चयन गर्नुहोस्',
+                      s.selectADDate,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -255,9 +264,9 @@ class _ConverterScreenState extends State<ConverterScreen>
               onPressed: _convertAdToBs,
               icon: const Icon(Icons.swap_vert_rounded,
                   color: Colors.white, size: 20),
-              label: const Text(
-                'रूपान्तरण गर्नुहोस्',
-                style: TextStyle(
+              label: Text(
+                s.convert,
+                style: const TextStyle(
                   fontSize: 15,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -276,7 +285,7 @@ class _ConverterScreenState extends State<ConverterScreen>
           // Result
           if (_adToBsResult != null)
             _resultCard(
-              label: 'बि.सं. मिति',
+              label: s.bsDateLabel,
               value: _adToBsResult!,
               icon: Icons.event_outlined,
               colors: colors,
@@ -288,7 +297,7 @@ class _ConverterScreenState extends State<ConverterScreen>
     );
   }
 
-  Widget _buildBsToAdTab(NepaliThemeColors colors) {
+  Widget _buildBsToAdTab(NepaliThemeColors colors, S s, bool isNepali) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Center(
@@ -323,7 +332,7 @@ class _ConverterScreenState extends State<ConverterScreen>
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'बि.सं. मिति प्रविष्ट गर्नुहोस्',
+                      s.enterBSDate,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -335,11 +344,11 @@ class _ConverterScreenState extends State<ConverterScreen>
                 const SizedBox(height: 20),
                 // Year
                 _styledDropdown(
-                  label: 'वर्ष',
+                  label: s.year,
                   value: _bsYear,
                   items: _bsYears,
                   displayBuilder: (v) =>
-                      NepaliDateHelper.toNepaliNumeral(v),
+                      NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
                   onChanged: (v) => setState(() => _bsYear = v!),
                   colors: colors,
                 ),
@@ -349,11 +358,11 @@ class _ConverterScreenState extends State<ConverterScreen>
                   children: [
                     Expanded(
                       child: _styledDropdown(
-                        label: 'महिना',
+                        label: s.month,
                         value: _bsMonth,
                         items: _months12,
                         displayBuilder: (v) =>
-                            NepaliDateHelper.monthNames[v - 1],
+                            s.monthNames[v - 1],
                         onChanged: (v) => setState(() => _bsMonth = v!),
                         colors: colors,
                       ),
@@ -361,11 +370,11 @@ class _ConverterScreenState extends State<ConverterScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: _styledDropdown(
-                        label: 'गते',
+                        label: s.day,
                         value: _bsDay,
                         items: _bsDays32,
                         displayBuilder: (v) =>
-                            NepaliDateHelper.toNepaliNumeral(v),
+                            NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
                         onChanged: (v) => setState(() => _bsDay = v!),
                         colors: colors,
                       ),
@@ -383,9 +392,9 @@ class _ConverterScreenState extends State<ConverterScreen>
               onPressed: _convertBsToAd,
               icon: const Icon(Icons.swap_vert_rounded,
                   color: Colors.white, size: 20),
-              label: const Text(
-                'रूपान्तरण गर्नुहोस्',
-                style: TextStyle(
+              label: Text(
+                s.convert,
+                style: const TextStyle(
                   fontSize: 15,
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -404,7 +413,7 @@ class _ConverterScreenState extends State<ConverterScreen>
           // Result
           if (_bsToAdResult != null)
             _resultCard(
-              label: 'AD Date',
+              label: s.adDateLabel,
               value: _bsToAdResult!,
               icon: Icons.today_outlined,
               colors: colors,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../core/nepali_holidays.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/events_provider.dart';
+import '../providers/language_provider.dart';
 import 'add_event_dialog.dart' show AddReminderDialog;
 
 /// A bottom card that shows details of the selected date,
@@ -21,11 +23,13 @@ class SelectedDateBanner extends ConsumerWidget {
     if (selected == null) return const SizedBox.shrink();
 
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
-    final dayName = NepaliDateHelper.dayFullNames[selected.weekday - 1];
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
+    final dayName = s.dayFullNames[selected.weekday - 1];
     final nepaliDate =
-        '${NepaliDateHelper.toNepaliNumeral(selected.day)} '
-        '${NepaliDateHelper.monthName(selected.month)} '
-        '${NepaliDateHelper.toNepaliNumeral(selected.year)}';
+        '${NepaliDateHelper.localizedNumeral(selected.day, isNepali: isNepali)} '
+        '${NepaliDateHelper.monthName(selected.month, isNepali: isNepali)} '
+        '${NepaliDateHelper.localizedNumeral(selected.year, isNepali: isNepali)}';
     final adDate = NepaliDateHelper.toADString(
       selected.year,
       selected.month,
@@ -214,7 +218,7 @@ class SelectedDateBanner extends ConsumerWidget {
                       size: 16, color: AppTheme.accent),
                   const SizedBox(width: 4),
                   Text(
-                    'स्मरण थप्नुहोस्',
+                    s.addReminder,
                     style: TextStyle(
                       fontSize: 13,
                       color: AppTheme.accent,

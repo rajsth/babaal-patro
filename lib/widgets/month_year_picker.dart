@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../providers/calendar_provider.dart';
+import '../providers/language_provider.dart';
 
 /// A bottom-sheet dialog that lets users quickly jump to any BS year/month.
 class MonthYearPicker extends ConsumerStatefulWidget {
@@ -40,6 +42,8 @@ class _MonthYearPickerState extends ConsumerState<MonthYearPicker> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -62,7 +66,7 @@ class _MonthYearPickerState extends ConsumerState<MonthYearPicker> {
           ),
 
           Text(
-            'वर्ष र महिना छान्नुहोस्',
+            s.selectYearMonth,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -89,7 +93,7 @@ class _MonthYearPickerState extends ConsumerState<MonthYearPicker> {
                   final isActive = year == _selectedYear;
                   return Center(
                     child: Text(
-                      NepaliDateHelper.toNepaliNumeral(year),
+                      NepaliDateHelper.localizedNumeral(year, isNepali: isNepali),
                       style: TextStyle(
                         fontSize: isActive ? 22 : 16,
                         fontWeight:
@@ -133,7 +137,7 @@ class _MonthYearPickerState extends ConsumerState<MonthYearPicker> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    NepaliDateHelper.monthNames[index],
+                    s.monthNames[index],
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight:
@@ -164,9 +168,9 @@ class _MonthYearPickerState extends ConsumerState<MonthYearPicker> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'जानुहोस्',
-                style: TextStyle(
+              child: Text(
+                s.go,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

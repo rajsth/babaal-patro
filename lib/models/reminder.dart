@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_localizations.dart';
 
 enum ReminderCategory {
   personal,
@@ -29,30 +30,12 @@ enum AlertOffset {
 }
 
 extension ReminderCategoryLabel on ReminderCategory {
-  String get label {
-    switch (this) {
-      case ReminderCategory.personal:
-        return 'व्यक्तिगत';
-      case ReminderCategory.financial:
-        return 'आर्थिक';
-      case ReminderCategory.healthcare:
-        return 'स्वास्थ्य';
-      case ReminderCategory.cultural:
-        return 'सांस्कृतिक';
-      case ReminderCategory.birthday:
-        return 'जन्मदिन';
-      case ReminderCategory.anniversary:
-        return 'वार्षिकोत्सव';
-      case ReminderCategory.invitation:
-        return 'निमन्त्रणा';
-      case ReminderCategory.shopping:
-        return 'किनमेल';
-      case ReminderCategory.medicine:
-        return 'औषधि';
-      case ReminderCategory.school:
-        return 'विद्यालय';
-    }
-  }
+  /// Localized label. Pass `isNepali` for language-aware display.
+  String localizedLabel(bool isNepali) =>
+      S.of(isNepali).categoryLabel(ReminderCategoryKey.values[index]);
+
+  /// Default Nepali label (backward compat).
+  String get label => localizedLabel(true);
 
   IconData get icon {
     switch (this) {
@@ -81,35 +64,17 @@ extension ReminderCategoryLabel on ReminderCategory {
 }
 
 extension ReminderRecurrenceLabel on ReminderRecurrence {
-  String get label {
-    switch (this) {
-      case ReminderRecurrence.none:
-        return 'एक पटक';
-      case ReminderRecurrence.daily:
-        return 'दैनिक';
-      case ReminderRecurrence.weekly:
-        return 'साप्ताहिक';
-      case ReminderRecurrence.monthly:
-        return 'मासिक';
-      case ReminderRecurrence.yearly:
-        return 'वार्षिक';
-    }
-  }
+  String localizedLabel(bool isNepali) =>
+      S.of(isNepali).recurrenceLabel(RecurrenceKey.values[index]);
+
+  String get label => localizedLabel(true);
 }
 
 extension AlertOffsetLabel on AlertOffset {
-  String get label {
-    switch (this) {
-      case AlertOffset.atTime:
-        return 'समयमा';
-      case AlertOffset.fifteenMin:
-        return '१५ मिनेट अगाडि';
-      case AlertOffset.oneHour:
-        return '१ घण्टा अगाडि';
-      case AlertOffset.oneDay:
-        return '१ दिन अगाडि';
-    }
-  }
+  String localizedLabel(bool isNepali) =>
+      S.of(isNepali).alertLabel(AlertKey.values[index]);
+
+  String get label => localizedLabel(true);
 }
 
 class Reminder {

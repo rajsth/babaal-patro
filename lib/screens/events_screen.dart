@@ -3,9 +3,11 @@ import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../models/reminder.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
 import '../widgets/add_event_dialog.dart';
 
@@ -32,6 +34,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
   void _showBackupNudge() {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
     showModalBottomSheet(
       context: context,
       backgroundColor: colors.cardColor,
@@ -66,7 +70,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'स्मरण सुरक्षित गर्नुहोस्!',
+              s.saveReminders,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -75,7 +79,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'अहिले तपाईंका स्मरणहरू यस डिभाइसमा मात्र छन्। फोन बदल्दा वा एप मेटाउँदा सबै डाटा गुम्न सक्छ।\n\nGoogle खाताबाट साइन इन गरेर क्लाउडमा ब्याकअप गर्नुहोस्।',
+              s.backupDescription,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -103,9 +107,9 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   color: Colors.white,
                   size: 18,
                 ),
-                label: const Text(
-                  'Google बाट साइन इन गर्नुहोस्',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                label: Text(
+                  s.signInWithGoogle,
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ),
             ),
@@ -113,7 +117,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                'पछि गर्छु',
+                s.later,
                 style: TextStyle(color: colors.textSecondary),
               ),
             ),
@@ -126,6 +130,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     final sorted = ref.watch(
       remindersProvider.select((list) => [...list]..sort(_compareReminders)),
@@ -136,6 +142,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     ref.listen<dynamic>(authProvider, (prev, next) {
       if (prev == null && next != null) {
         setState(() => _bannerDismissed = true);
+        final ls = S.of(ref.read(languageProvider));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -149,22 +156,22 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 const Icon(Icons.cloud_done_rounded,
                     color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'स्मरणहरू क्लाउडमा सुरक्षित भयो!',
-                        style: TextStyle(
+                        ls.remindersSyncedToCloud,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),
                       ),
                       Text(
-                        'अहिले र भविष्यका सबै स्मरणहरू स्वतः सिंक हुनेछन्।',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ls.allRemindersSyncAuto,
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
                       ),
                     ],
                   ),
@@ -210,7 +217,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Text(
-                'स्मरणहरू',
+                s.reminders,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -223,13 +230,14 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             if (showBanner)
               _SyncBanner(
                 colors: colors,
+                isNepali: isNepali,
                 onSignIn: () async {
                   final ok = await ref
                       .read(authProvider.notifier)
                       .signInWithGoogle();
                   if (!ok && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('साइन इन असफल भयो')),
+                      SnackBar(content: Text(s.signInFailed)),
                     );
                   }
                 },
@@ -241,6 +249,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               _FilterBar(
                 usedCategories: usedCategories,
                 activeFilter: _activeFilter,
+                isNepali: isNepali,
                 onSelect: (cat) => setState(
                   () => _activeFilter = _activeFilter == cat ? null : cat,
                 ),
@@ -250,7 +259,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             // ── Reminder list ────────────────────────────────────────
             Expanded(
               child: visible.isEmpty
-                  ? _EmptyState(filtered: _activeFilter != null)
+                  ? _EmptyState(filtered: _activeFilter != null, isNepali: isNepali)
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                       itemCount: visible.length,
@@ -260,6 +269,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           key: ValueKey(reminder.id),
                           reminder: reminder,
                           colors: colors,
+                          isNepali: isNepali,
                           onToggle: () => ref
                               .read(remindersProvider.notifier)
                               .toggleReminder(reminder.id),
@@ -284,17 +294,20 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
 class _SyncBanner extends StatelessWidget {
   final NepaliThemeColors colors;
+  final bool isNepali;
   final VoidCallback onSignIn;
   final VoidCallback onDismiss;
 
   const _SyncBanner({
     required this.colors,
+    required this.isNepali,
     required this.onSignIn,
     required this.onDismiss,
   });
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(isNepali);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -310,7 +323,7 @@ class _SyncBanner extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'स्मरणहरू सुरक्षित साथ राख्नको लागी साइन इन गर्नुहोस्',
+                s.signInToKeepSafe,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -326,7 +339,7 @@ class _SyncBanner extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
-                'साइन इन',
+                s.signIn,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -352,12 +365,14 @@ class _FilterBar extends StatelessWidget {
   final ReminderCategory? activeFilter;
   final void Function(ReminderCategory) onSelect;
   final NepaliThemeColors colors;
+  final bool isNepali;
 
   const _FilterBar({
     required this.usedCategories,
     required this.activeFilter,
     required this.onSelect,
     required this.colors,
+    required this.isNepali,
   });
 
   @override
@@ -408,7 +423,7 @@ class _FilterBar extends StatelessWidget {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      cat.label,
+                      cat.localizedLabel(isNepali),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: isSelected
@@ -434,11 +449,13 @@ class _FilterBar extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final bool filtered;
-  const _EmptyState({this.filtered = false});
+  final bool isNepali;
+  const _EmptyState({this.filtered = false, required this.isNepali});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final s = S.of(isNepali);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -452,14 +469,14 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            filtered ? 'यस श्रेणीमा कुनै स्मरण छैन' : 'कुनै स्मरण थपिएको छैन',
+            filtered ? s.noCategoryReminders : s.noRemindersAdded,
             style: TextStyle(fontSize: 16, color: colors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             filtered
-                ? 'अर्को श्रेणी छान्नुहोस् वा फिल्टर हटाउनुहोस्'
-                : '+ थिचेर नयाँ स्मरण थप्नुहोस्',
+                ? s.chooseDifferentCategory
+                : s.tapPlusToAdd,
             style: TextStyle(
               fontSize: 13,
               color: colors.textSecondary.withValues(alpha: 0.6),
@@ -476,6 +493,7 @@ class _EmptyState extends StatelessWidget {
 class _ReminderTile extends StatelessWidget {
   final Reminder reminder;
   final NepaliThemeColors colors;
+  final bool isNepali;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
 
@@ -483,14 +501,15 @@ class _ReminderTile extends StatelessWidget {
     super.key,
     required this.reminder,
     required this.colors,
+    required this.isNepali,
     required this.onToggle,
     required this.onDelete,
   });
 
   String get _bsDateStr =>
-      '${NepaliDateHelper.toNepaliNumeral(reminder.bsDay)} '
-      '${NepaliDateHelper.monthName(reminder.bsMonth)} '
-      '${NepaliDateHelper.toNepaliNumeral(reminder.bsYear)}';
+      '${NepaliDateHelper.localizedNumeral(reminder.bsDay, isNepali: isNepali)} '
+      '${NepaliDateHelper.monthName(reminder.bsMonth, isNepali: isNepali)} '
+      '${NepaliDateHelper.localizedNumeral(reminder.bsYear, isNepali: isNepali)}';
 
   String get _adDateStr {
     try {
@@ -633,13 +652,13 @@ class _ReminderTile extends StatelessWidget {
                             ),
                             _InfoBadge(
                               icon: Icons.repeat_rounded,
-                              label: reminder.recurrence.label,
+                              label: reminder.recurrence.localizedLabel(isNepali),
                               colors: colors,
                             ),
                             if (reminder.alertOffset != AlertOffset.atTime)
                               _InfoBadge(
                                 icon: Icons.alarm_rounded,
-                                label: reminder.alertOffset.label,
+                                label: reminder.alertOffset.localizedLabel(isNepali),
                                 colors: colors,
                               ),
                           ],

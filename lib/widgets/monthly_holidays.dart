@@ -1,14 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:nepali_utils/nepali_utils.dart';
 import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../core/nepali_holidays.dart';
 import '../providers/calendar_provider.dart';
+import '../providers/language_provider.dart';
 
 /// Displays all holidays for the currently shown month.
 class MonthlyHolidays extends ConsumerWidget {
   const MonthlyHolidays({super.key});
+
+  /// Returns the number of days between today and the given BS date.
+  /// Negative = past, positive = future, 0 = today.
+  int _dayDifference(int year, int month, int day) {
+    final holidayAd = NepaliDateTime(year, month, day).toDateTime();
+    final todayAd = DateTime.now();
+    final hDate = DateTime(holidayAd.year, holidayAd.month, holidayAd.day);
+    final tDate = DateTime(todayAd.year, todayAd.month, todayAd.day);
+    return hDate.difference(tDate).inDays;
+  }
+
+  String _relativeLabel(int diff, S s, bool isNepali) {
+    if (diff == 0) return s.todayLabel;
+    if (diff == -1) return s.yesterdayLabel;
+    if (diff == 1) return s.tomorrowLabel;
+    if (diff < 0) {
+      final n = isNepali
+          ? NepaliDateHelper.toNepaliNumeral(-diff)
+          : '${-diff}';
+      return s.daysAgo(n);
+    }
+    final n = isNepali
+        ? NepaliDateHelper.toNepaliNumeral(diff)
+        : '$diff';
+    return s.daysLater(n);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,6 +46,8 @@ class MonthlyHolidays extends ConsumerWidget {
     final month = ref.watch(calendarProvider.select((s) => s.month));
     final holidays = NepaliHolidays.holidaysInMonth(year, month);
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     if (holidays.isEmpty) return const SizedBox.shrink();
 
@@ -30,7 +61,7 @@ class MonthlyHolidays extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${NepaliDateHelper.monthName(month)}का बिदाहरू',
+            s.holidaysOf(NepaliDateHelper.monthName(month, isNepali: isNepali)),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -38,7 +69,10 @@ class MonthlyHolidays extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...sortedEntries.map((entry) => GestureDetector(
+          ...sortedEntries.map((entry) {
+            final diff = _dayDifference(year, month, entry.key);
+            final relLabel = _relativeLabel(diff, s, isNepali);
+            return GestureDetector(
                 onTap: () {
                   Haptic.light();
                   ref.read(calendarProvider.notifier).selectDay(entry.key);
@@ -62,7 +96,7 @@ class MonthlyHolidays extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '${NepaliDateHelper.toNepaliNumeral(entry.key)} गते',
+                              s.gate(NepaliDateHelper.localizedNumeral(entry.key, isNepali: isNepali)),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -71,7 +105,8 @@ class MonthlyHolidays extends ConsumerWidget {
                             ),
                             Text(
                               NepaliDateHelper.weekdayName(
-                                  year, month, entry.key),
+                                  year, month, entry.key,
+                                  isNepali: isNepali),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppTheme.saturday
@@ -83,12 +118,30 @@ class MonthlyHolidays extends ConsumerWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          entry.value,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: colors.textPrimary,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.value,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: colors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              relLabel,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: diff == 0
+                                    ? AppTheme.accent
+                                    : colors.textSecondary,
+                                fontWeight: diff == 0
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Icon(
@@ -99,7 +152,8 @@ class MonthlyHolidays extends ConsumerWidget {
                     ],
                   ),
                 ),
-              )),
+              );
+          }),
         ],
       ),
     );

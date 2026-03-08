@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../core/nepali_holidays.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/events_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/settings_provider.dart';
 
 /// The main calendar grid displaying day numbers in a 7-column layout,
@@ -27,6 +29,8 @@ class CalendarGrid extends ConsumerWidget {
         eventsNotifier.eventDaysInMonth(state.year, state.month);
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
     final showBorder = ref.watch(settingsProvider.select((s) => s.showGridBorder));
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     final leadingDays =
         NepaliDateHelper.previousMonthTrailingDays(state.year, state.month);
@@ -110,15 +114,15 @@ class CalendarGrid extends ConsumerWidget {
         final holidayName = holidays[day];
 
         // Build semantic label for screen readers.
-        final dayName = NepaliDateHelper.dayFullNames[index % 7];
+        final dayName = s.dayFullNames[index % 7];
         final semanticParts = <String>[
           NepaliDateHelper.toNepaliNumeral(day),
-          NepaliDateHelper.monthName(state.month),
+          NepaliDateHelper.monthName(state.month, isNepali: isNepali),
           dayName,
         ];
-        if (isToday) semanticParts.add('आज');
-        if (isHoliday) semanticParts.add('बिदा: $holidayName');
-        if (hasEvent) semanticParts.add('घटना छ');
+        if (isToday) semanticParts.add(s.todaySemantic);
+        if (isHoliday) semanticParts.add(s.holidaySemantic(holidayName!));
+        if (hasEvent) semanticParts.add(s.hasEventSemantic);
 
         return Semantics(
           label: semanticParts.join(', '),

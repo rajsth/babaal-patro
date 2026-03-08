@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
+import 'core/app_localizations.dart';
 import 'core/home_widget_updater.dart';
+import 'providers/language_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/calendar_screen.dart';
@@ -40,9 +42,11 @@ class NepaliCalendarApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     // Watch accent color so theme rebuilds when it changes.
     ref.watch(settingsProvider.select((s) => s.accentColorIndex));
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return MaterialApp(
-      title: 'बबाल पात्रो',
+      title: s.appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -53,14 +57,14 @@ class NepaliCalendarApp extends ConsumerWidget {
 }
 
 /// Bottom navigation shell with Calendar and Converter tabs.
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
   bool _showSplash = true;
 
@@ -80,6 +84,8 @@ class _AppShellState extends State<AppShell> {
     }
 
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    final isNepali = ref.watch(languageProvider);
+    final s = S.of(isNepali);
 
     return Scaffold(
       body: IndexedStack(
@@ -95,10 +101,10 @@ class _AppShellState extends State<AppShell> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(Icons.calendar_month_outlined, Icons.calendar_month, 'पात्रो', 0),
-            _navItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'स्मरण', 1),
-            _navItem(Icons.swap_horiz_outlined, Icons.swap_horiz, 'रूपान्तरण', 2),
-            _navItem(Icons.settings_outlined, Icons.settings, 'सेटिङ्स', 3),
+            _navItem(Icons.calendar_month_outlined, Icons.calendar_month, s.navCalendar, 0),
+            _navItem(Icons.notifications_none_rounded, Icons.notifications_rounded, s.navReminders, 1),
+            _navItem(Icons.swap_horiz_outlined, Icons.swap_horiz, s.navConverter, 2),
+            _navItem(Icons.settings_outlined, Icons.settings, s.navSettings, 3),
           ],
         ),
       ),
