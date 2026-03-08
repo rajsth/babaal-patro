@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "111382315348",
+    "project_id": "babaal-patro",
+    "storage_bucket": "babaal-patro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:111382315348:android:519044f5a87262735508c1",
+        "android_client_info": {
+          "package_name": "com.babaal.patro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "111382315348-09u208qb792p76729c7f73mpjhr9e5cp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqY8fjne42pstwPvJd1mpYuND0QgVKlG4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "111382315348-09u208qb792p76729c7f73mpjhr9e5cp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "111382315348-dokhkffrh89srge7sq7ajobpkclild2s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.babaal.patro"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

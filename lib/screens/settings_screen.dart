@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
+import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -122,6 +123,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final showGridBorder =
         ref.watch(settingsProvider.select((s) => s.showGridBorder));
+    final user = ref.watch(authProvider);
 
     return SafeArea(
       child: ListView(
@@ -139,6 +141,23 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          // Account tile
+          if (user == null)
+            _SignInWarningTile(
+              colors: colors,
+              onTap: () async {
+                final ok =
+                    await ref.read(authProvider.notifier).signInWithGoogle();
+                if (!ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('साइन इन असफल भयो')),
+                  );
+                }
+              },
+            )
+          else
+            _AccountTile(user: user, colors: colors, ref: ref),
+          const SizedBox(height: 12),
           // Theme toggle
           _SettingsTile(
             icon: themeMode == ThemeMode.dark
@@ -182,6 +201,176 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showAccentColorPicker(context, ref, colors),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SignInWarningTile extends StatelessWidget {
+  final NepaliThemeColors colors;
+  final VoidCallback onTap;
+
+  const _SignInWarningTile({required this.colors, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.amber.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.cloud_off_rounded,
+                    color: Colors.amber, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ब्याकअप छैन',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'साइन इन नगरेमा डाटा गुम्न सक्छ',
+                      style: TextStyle(
+                          fontSize: 12, color: colors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'साइन इन',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountTile extends StatelessWidget {
+  final dynamic user;
+  final NepaliThemeColors colors;
+  final WidgetRef ref;
+
+  const _AccountTile({
+    required this.user,
+    required this.colors,
+    required this.ref,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: colors.cardColor,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 21,
+                  backgroundImage: user.photoURL != null
+                      ? NetworkImage(user.photoURL as String)
+                      : null,
+                  backgroundColor: AppTheme.accent.withValues(alpha: 0.15),
+                  child: user.photoURL == null
+                      ? Icon(Icons.person, color: AppTheme.accent, size: 22)
+                      : null,
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.cardColor, width: 1.5),
+                    ),
+                    child: const Icon(Icons.check,
+                        size: 8, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.displayName as String? ?? 'प्रयोगकर्ता',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.cloud_done_rounded,
+                          size: 11, color: Colors.green),
+                      const SizedBox(width: 3),
+                      Text(
+                        'सिंक भइरहेको छ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () => ref.read(authProvider.notifier).signOut(),
+              child: Text(
+                'साइन आउट',
+                style: TextStyle(color: Colors.redAccent, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
