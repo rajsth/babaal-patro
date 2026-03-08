@@ -5,6 +5,7 @@ import 'package:nepali_utils/nepali_utils.dart';
 import '../core/app_theme.dart';
 import '../core/nepali_date_helper.dart';
 import '../models/reminder.dart';
+import '../providers/auth_provider.dart';
 import '../providers/reminders_provider.dart';
 import '../widgets/add_event_dialog.dart';
 
@@ -26,25 +27,170 @@ class EventsScreen extends ConsumerStatefulWidget {
 }
 
 class _EventsScreenState extends ConsumerState<EventsScreen> {
-  // null = "All" (no filter active)
   ReminderCategory? _activeFilter;
+  bool _bannerDismissed = false;
+
+  void _showBackupNudge() {
+    final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: Colors.amber,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'स्मरण सुरक्षित गर्नुहोस्!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'अहिले तपाईंका स्मरणहरू यस डिभाइसमा मात्र छन्। फोन बदल्दा वा एप मेटाउँदा सबै डाटा गुम्न सक्छ।\n\nGoogle खाताबाट साइन इन गरेर क्लाउडमा ब्याकअप गर्नुहोस्।',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(authProvider.notifier).signInWithGoogle();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Google बाट साइन इन गर्नुहोस्',
+                  style: TextStyle(color: Colors.white, fontSize: 15),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'पछि गर्छु',
+                style: TextStyle(color: colors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
 
     final sorted = ref.watch(
-      remindersProvider.select(
-        (list) => [...list]..sort(_compareReminders),
-      ),
+      remindersProvider.select((list) => [...list]..sort(_compareReminders)),
     );
+    final user = ref.watch(authProvider);
+
+    // Show cloud sync confirmation when user signs in
+    ref.listen<dynamic>(authProvider, (prev, next) {
+      if (prev == null && next != null) {
+        setState(() => _bannerDismissed = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 4),
+            content: Row(
+              children: [
+                const Icon(Icons.cloud_done_rounded,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'स्मरणहरू क्लाउडमा सुरक्षित भयो!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        'अहिले र भविष्यका सबै स्मरणहरू स्वतः सिंक हुनेछन्।',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    });
+
+    // Detect first reminder added while not signed in → show nudge
+    ref.listen<List<Reminder>>(remindersProvider, (prev, next) {
+      if (user == null && (prev?.isEmpty ?? true) && next.length == 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showBackupNudge();
+        });
+      }
+    });
 
     final visible = _activeFilter == null
         ? sorted
         : sorted.where((r) => r.category == _activeFilter).toList();
 
-    // Which categories actually have at least one reminder (for pill visibility).
     final usedCategories = {for (final r in sorted) r.category};
+    final showBanner = user == null && sorted.isNotEmpty && !_bannerDismissed;
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -73,13 +219,31 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               ),
             ),
 
+            // ── Sync banner ──────────────────────────────────────────
+            if (showBanner)
+              _SyncBanner(
+                colors: colors,
+                onSignIn: () async {
+                  final ok = await ref
+                      .read(authProvider.notifier)
+                      .signInWithGoogle();
+                  if (!ok && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('साइन इन असफल भयो')),
+                    );
+                  }
+                },
+                onDismiss: () => setState(() => _bannerDismissed = true),
+              ),
+
             // ── Category filter bar ──────────────────────────────────
             if (sorted.isNotEmpty)
               _FilterBar(
                 usedCategories: usedCategories,
                 activeFilter: _activeFilter,
-                onSelect: (cat) =>
-                    setState(() => _activeFilter = _activeFilter == cat ? null : cat),
+                onSelect: (cat) => setState(
+                  () => _activeFilter = _activeFilter == cat ? null : cat,
+                ),
                 colors: colors,
               ),
 
@@ -116,6 +280,71 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   }
 }
 
+// ── Sync banner ──────────────────────────────────────────────────────────────
+
+class _SyncBanner extends StatelessWidget {
+  final NepaliThemeColors colors;
+  final VoidCallback onSignIn;
+  final VoidCallback onDismiss;
+
+  const _SyncBanner({
+    required this.colors,
+    required this.onSignIn,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: SelectionArea(
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'स्मरणहरू सुरक्षित साथ राख्नको लागी साइन इन गर्नुहोस्',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onSignIn,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'साइन इन',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.accent,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onDismiss,
+              child: Icon(Icons.close, size: 16, color: colors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Filter bar ──────────────────────────────────────────────────────────────
 
 class _FilterBar extends StatelessWidget {
@@ -138,9 +367,9 @@ class _FilterBar extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: ReminderCategory.values
-            .where(usedCategories.contains)
-            .map((cat) {
+        children: ReminderCategory.values.where(usedCategories.contains).map((
+          cat,
+        ) {
           final isSelected = activeFilter == cat;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -151,8 +380,10 @@ class _FilterBar extends StatelessWidget {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.accent.withValues(alpha: 0.15)
@@ -221,9 +452,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            filtered
-                ? 'यस श्रेणीमा कुनै स्मरण छैन'
-                : 'कुनै स्मरण थपिएको छैन',
+            filtered ? 'यस श्रेणीमा कुनै स्मरण छैन' : 'कुनै स्मरण थपिएको छैन',
             style: TextStyle(fontSize: 16, color: colors.textSecondary),
           ),
           const SizedBox(height: 8),
@@ -265,12 +494,24 @@ class _ReminderTile extends StatelessWidget {
 
   String get _adDateStr {
     try {
-      final ad =
-          NepaliDateTime(reminder.bsYear, reminder.bsMonth, reminder.bsDay)
-              .toDateTime();
+      final ad = NepaliDateTime(
+        reminder.bsYear,
+        reminder.bsMonth,
+        reminder.bsDay,
+      ).toDateTime();
       const m = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${m[ad.month - 1]} ${ad.day}, ${ad.year}';
     } catch (_) {
@@ -306,104 +547,117 @@ class _ReminderTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: colors.divider),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Category icon badge
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+          child: SelectionArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category icon badge
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      reminder.category.icon,
+                      size: 20,
+                      color: AppTheme.accent,
+                    ),
                   ),
-                  child: Icon(reminder.category.icon,
-                      size: 20, color: AppTheme.accent),
-                ),
-                const SizedBox(width: 12),
-                // Main content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        reminder.title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      if (reminder.description.isNotEmpty) ...[
-                        const SizedBox(height: 2),
+                  const SizedBox(width: 12),
+                  // Main content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          reminder.description,
+                          reminder.title,
                           style: TextStyle(
-                              fontSize: 12, color: colors.textSecondary),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today_outlined,
-                              size: 12, color: colors.textSecondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            _bsDateStr,
-                            style: TextStyle(
-                                fontSize: 12, color: colors.textSecondary),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
                           ),
-                          if (adDateStr.isNotEmpty)
+                        ),
+                        if (reminder.description.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            reminder.description,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.textSecondary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 12,
+                              color: colors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
                             Text(
-                              '  ·  $adDateStr',
+                              _bsDateStr,
                               style: TextStyle(
-                                fontSize: 11,
-                                color: colors.textSecondary
-                                    .withValues(alpha: 0.6),
+                                fontSize: 12,
+                                color: colors.textSecondary,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          _InfoBadge(
-                            icon: Icons.access_time_rounded,
-                            label: reminder.timeLabel,
-                            colors: colors,
-                          ),
-                          _InfoBadge(
-                            icon: Icons.repeat_rounded,
-                            label: reminder.recurrence.label,
-                            colors: colors,
-                          ),
-                          if (reminder.alertOffset != AlertOffset.atTime)
+                            if (adDateStr.isNotEmpty)
+                              Text(
+                                '  ·  $adDateStr',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: colors.textSecondary.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
                             _InfoBadge(
-                              icon: Icons.alarm_rounded,
-                              label: reminder.alertOffset.label,
+                              icon: Icons.access_time_rounded,
+                              label: reminder.timeLabel,
                               colors: colors,
                             ),
-                        ],
-                      ),
-                    ],
+                            _InfoBadge(
+                              icon: Icons.repeat_rounded,
+                              label: reminder.recurrence.label,
+                              colors: colors,
+                            ),
+                            if (reminder.alertOffset != AlertOffset.atTime)
+                              _InfoBadge(
+                                icon: Icons.alarm_rounded,
+                                label: reminder.alertOffset.label,
+                                colors: colors,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Switch(
-                  value: reminder.isEnabled,
-                  onChanged: (_) {
-                    Haptic.selection();
-                    onToggle();
-                  },
-                  activeThumbColor: AppTheme.accent,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ],
+                  Switch(
+                    value: reminder.isEnabled,
+                    onChanged: (_) {
+                      Haptic.selection();
+                      onToggle();
+                    },
+                    activeThumbColor: AppTheme.accent,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,7 +1,10 @@
 import 'dart:io' show Platform;
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'core/home_widget_updater.dart';
 import 'providers/settings_provider.dart';
@@ -15,13 +18,16 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Push today's date to the Android home screen widget (Android only).
-  if (Platform.isAndroid) {
+  if (!kIsWeb && Platform.isAndroid) {
     HomeWidgetUpdater.update();
   }
-  // Initialise local notifications and request runtime permissions.
-  await NotificationService.instance.init();
-  await NotificationService.instance.requestPermissions();
+  // Initialise local notifications and request runtime permissions (mobile only).
+  if (!kIsWeb) {
+    await NotificationService.instance.init();
+    await NotificationService.instance.requestPermissions();
+  }
   runApp(const ProviderScope(child: NepaliCalendarApp()));
 }
 
