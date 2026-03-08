@@ -4,12 +4,15 @@ import 'package:nepali_utils/nepali_utils.dart';
 import 'app_theme.dart';
 import 'nepali_date_helper.dart';
 
-/// Updates the Android home screen widget with today's Nepali date.
-/// Call this on app launch and whenever the calendar screen is opened.
+/// Updates the home screen widget (Android & iOS) with today's Nepali date.
+/// Call this on app launch and whenever the accent color changes.
 class HomeWidgetUpdater {
   HomeWidgetUpdater._();
 
   static const _androidWidgetName = 'NepaliDateWidget';
+  static const _iOSSmallWidgetName = 'NepaliDateWidget';
+  static const _iOSMediumWidgetName = 'NepaliDateWidgetMedium';
+  static const _appGroupId = 'group.com.babaal.patro';
 
   static const _adMonths = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -21,6 +24,8 @@ class HomeWidgetUpdater {
   }
 
   static Future<void> update() async {
+    await HomeWidget.setAppGroupId(_appGroupId);
+
     final now = NepaliDateTime.now();
     final adNow = DateTime.now();
 
@@ -47,6 +52,11 @@ class HomeWidgetUpdater {
 
     await HomeWidget.updateWidget(
       androidName: _androidWidgetName,
+      iOSName: _iOSSmallWidgetName,
+    );
+    await HomeWidget.updateWidget(
+      androidName: _androidWidgetName,
+      iOSName: _iOSMediumWidgetName,
     );
   }
 }

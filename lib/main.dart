@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -21,8 +19,8 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Push today's date to the Android home screen widget (Android only).
-  if (!kIsWeb && Platform.isAndroid) {
+  // Push today's date to the home screen widget (Android + iOS).
+  if (!kIsWeb) {
     HomeWidgetUpdater.update();
   }
   // Initialise local notifications and request runtime permissions (mobile only).
