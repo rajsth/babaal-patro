@@ -28,12 +28,12 @@ void main() async {
     await NotificationService.instance.init();
     await NotificationService.instance.requestPermissions();
   }
-  runApp(const ProviderScope(child: NepaliCalendarApp()));
+  runApp(const ProviderScope(child: BabaalPatroApp()));
 }
 
 /// Root widget — applies the persisted theme and sets up bottom navigation.
-class NepaliCalendarApp extends ConsumerWidget {
-  const NepaliCalendarApp({super.key});
+class BabaalPatroApp extends ConsumerWidget {
+  const BabaalPatroApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

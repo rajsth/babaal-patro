@@ -1,4 +1,4 @@
-# बबाल पात्रो (Babaal Patro)
+# बबाल पात्रो (Babaal patro)
 
 A modern Nepali Calendar (Bikram Sambat) app built with Flutter. Designed for everyday use with a clean, minimal dark-first interface that feels native to Nepali users.
 
