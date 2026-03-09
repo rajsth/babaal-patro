@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
@@ -9,38 +10,37 @@ import '../models/reminder.dart';
 import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
 
-/// Dialog for adding a new BS-based local-notification reminder.
-///
-/// Fields: title, description, BS date picker, time picker, category,
-/// recurrence, and alert offset.
-class AddReminderDialog extends ConsumerStatefulWidget {
-  /// Pre-populate the BS date when opened from the calendar grid.
-  final NepaliDateTime? initialDate;
-
-  const AddReminderDialog({super.key, this.initialDate});
-
-  @override
-  ConsumerState<AddReminderDialog> createState() => _AddReminderDialogState();
+/// Opens the Add Reminder bottom sheet from anywhere in the app.
+void showAddReminderSheet(BuildContext context, {NepaliDateTime? initialDate}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _AddReminderSheet(initialDate: initialDate),
+  );
 }
 
-class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
+// ═══════════════════════════════════════════════════════════════════════════
+// Main bottom-sheet widget
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _AddReminderSheet extends ConsumerStatefulWidget {
+  final NepaliDateTime? initialDate;
+  const _AddReminderSheet({this.initialDate});
+
+  @override
+  ConsumerState<_AddReminderSheet> createState() => _AddReminderSheetState();
+}
+
+class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
   final _titleController = TextEditingController();
-  final _descController = TextEditingController();
-
-  late int _year;
-  late int _month;
-  late int _day;
-  late int _hour;
-  late int _minute;
-
+  late int _year, _month, _day, _hour, _minute;
   ReminderCategory _category = ReminderCategory.personal;
   ReminderRecurrence _recurrence = ReminderRecurrence.none;
   AlertOffset _alertOffset = AlertOffset.atTime;
-
   bool _showTitleError = false;
-
-  static final List<int> _years = List.generate(91, (i) => 2000 + i);
-  static final List<int> _months = List.generate(12, (i) => i + 1);
+  bool _showMoreOptions = false;
 
   @override
   void initState() {
@@ -50,26 +50,71 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
     _month = now.month;
     _day = now.day;
     final adNow = DateTime.now();
-    _hour = adNow.hour;
-    _minute = adNow.minute;
-    // Clear validation error as soon as the user starts typing.
-    _titleController.addListener(() {
-      if (_showTitleError && _titleController.text.trim().isNotEmpty) {
-        setState(() => _showTitleError = false);
-      }
-    });
+    // Round up to next hour for convenience.
+    _hour = adNow.minute > 0 ? (adNow.hour + 1) % 24 : adNow.hour;
+    _minute = 0;
+    _titleController.addListener(_onTitleChanged);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _descController.dispose();
     super.dispose();
   }
 
-  int _daysInMonth() {
+  // ── Smart defaults ───────────────────────────────────────────────────
+
+  void _onTitleChanged() {
+    if (_showTitleError && _titleController.text.trim().isNotEmpty) {
+      setState(() => _showTitleError = false);
+    }
+    _autoDetectCategory();
+  }
+
+  void _autoDetectCategory() {
+    final title = _titleController.text.trim().toLowerCase();
+    if (title.isEmpty) return;
+
+    ReminderCategory? detected;
+    ReminderRecurrence? detectedRecurrence;
+
+    if (_has(title, ['birthday', 'bday', 'जन्मदिन'])) {
+      detected = ReminderCategory.birthday;
+      detectedRecurrence = ReminderRecurrence.yearly;
+    } else if (_has(title, ['anniversary', 'वार्षिकोत्सव'])) {
+      detected = ReminderCategory.anniversary;
+      detectedRecurrence = ReminderRecurrence.yearly;
+    } else if (_has(title, ['doctor', 'hospital', 'clinic', 'checkup', 'अस्पताल', 'डाक्टर'])) {
+      detected = ReminderCategory.healthcare;
+    } else if (_has(title, ['medicine', 'pill', 'tablet', 'औषधि'])) {
+      detected = ReminderCategory.medicine;
+    } else if (_has(title, ['school', 'class', 'exam', 'college', 'विद्यालय'])) {
+      detected = ReminderCategory.school;
+    } else if (_has(title, ['pay', 'rent', 'loan', 'bill', 'emi', 'तिर्नु'])) {
+      detected = ReminderCategory.financial;
+    } else if (_has(title, ['buy', 'shop', 'grocery', 'किनमेल'])) {
+      detected = ReminderCategory.shopping;
+    } else if (_has(title, ['festival', 'puja', 'dashain', 'tihar', 'चाड'])) {
+      detected = ReminderCategory.cultural;
+    } else if (_has(title, ['wedding', 'party', 'invite', 'निमन्त्रणा'])) {
+      detected = ReminderCategory.invitation;
+    }
+
+    if (detected != null && detected != _category) {
+      setState(() {
+        _category = detected!;
+        if (detectedRecurrence != null) _recurrence = detectedRecurrence;
+      });
+    }
+  }
+
+  static bool _has(String t, List<String> kw) => kw.any(t.contains);
+
+  // ── Pickers ──────────────────────────────────────────────────────────
+
+  int _daysInMonth([int? y, int? m]) {
     try {
-      return NepaliDateTime(_year, _month).totalDays;
+      return NepaliDateTime(y ?? _year, m ?? _month).totalDays;
     } catch (_) {
       return 30;
     }
@@ -88,6 +133,159 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
     }
   }
 
+  Future<void> _pickDate() async {
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
+    final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+
+    int tempYear = _year;
+    int tempMonth = _month;
+    int tempDay = _day;
+
+    const startYear = 2000;
+    final years = List.generate(91, (i) => startYear + i);
+    final months = List.generate(12, (i) => i + 1);
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setPickerState) {
+          int maxDay = _daysInMonth(tempYear, tempMonth);
+          if (tempDay > maxDay) tempDay = maxDay;
+          final days = List.generate(maxDay, (i) => i + 1);
+
+          return SafeArea(
+            child: SizedBox(
+              height: 300,
+              child: Column(
+                children: [
+                  // ── Handle + title row ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+                    child: Column(children: [
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.divider,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(s.bsDate,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                              )),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _year = tempYear;
+                                _month = tempMonth;
+                                _day = tempDay;
+                              });
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(s.save,
+                                style: TextStyle(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    ]),
+                  ),
+                  // ── Scroll wheels ──
+                  Expanded(
+                    child: Row(children: [
+                      _wheel(
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
+                        label: (i) => NepaliDateHelper.localizedNumeral(
+                            days[i],
+                            isNepali: isNepali),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: tempMonth - 1,
+                        count: 12,
+                        label: (i) => s.monthNames[i],
+                        onChanged: (i) => setPickerState(() {
+                          tempMonth = months[i];
+                          final m = _daysInMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: tempYear - startYear,
+                        count: years.length,
+                        label: (i) => NepaliDateHelper.localizedNumeral(
+                            years[i],
+                            isNepali: isNepali),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = years[i];
+                          final m = _daysInMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static Widget _wheel({
+    required int flex,
+    required int initial,
+    required int count,
+    required String Function(int) label,
+    required ValueChanged<int> onChanged,
+    required NepaliThemeColors colors,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: CupertinoPicker(
+        scrollController: FixedExtentScrollController(initialItem: initial),
+        itemExtent: 40,
+        diameterRatio: 1.2,
+        squeeze: 1.0,
+        selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
+          background: AppTheme.accent.withValues(alpha: 0.08),
+        ),
+        onSelectedItemChanged: onChanged,
+        children: List.generate(
+          count,
+          (i) => Center(
+            child: Text(label(i),
+                style: TextStyle(fontSize: 17, color: colors.textPrimary)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────
+
   void _submit() {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
@@ -95,13 +293,16 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
       return;
     }
 
+    final maxDay = _daysInMonth();
+    final day = _day > maxDay ? maxDay : _day;
+
     final reminder = Reminder(
       id: '${DateTime.now().millisecondsSinceEpoch}_${title.hashCode}',
       title: title,
-      description: _descController.text.trim(),
+      description: '',
       bsYear: _year,
       bsMonth: _month,
-      bsDay: _day,
+      bsDay: day,
       hour: _hour,
       minute: _minute,
       category: _category,
@@ -113,6 +314,8 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
     Navigator.pop(context);
   }
 
+  // ── Build ────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
@@ -120,27 +323,49 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
     final s = S.of(isNepali);
     final maxDay = _daysInMonth();
     if (_day > maxDay) _day = maxDay;
-    final days = List.generate(maxDay, (i) => i + 1);
 
     final timeLabel =
         '${_hour % 12 == 0 ? 12 : _hour % 12}:${_minute.toString().padLeft(2, '0')} '
         '${_hour < 12 ? 'AM' : 'PM'}';
 
-    return Dialog(
-      backgroundColor: colors.cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Header ──────────────────────────────────────────────
-              Row(
-                children: [
+    final dateLabel =
+        '${NepaliDateHelper.localizedNumeral(_day, isNepali: isNepali)} '
+        '${s.monthNames[_month - 1]} '
+        '${NepaliDateHelper.localizedNumeral(_year, isNepali: isNepali)}';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.55,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Drag handle ──
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // ── Header ──
+                Row(children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -148,243 +373,258 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.notifications_rounded,
-                        color: AppTheme.accent, size: 22),
+                        color: AppTheme.accent, size: 20),
                   ),
-                  const SizedBox(width: 14),
-                  Text(
-                    s.addNewReminder,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                    ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(s.addNewReminder,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        )),
                   ),
-                ],
-              ),
-              const SizedBox(height: 22),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close_rounded,
+                        color: colors.textSecondary, size: 22),
+                  ),
+                ]),
+                const SizedBox(height: 20),
 
-              // ── Title ────────────────────────────────────────────────
-              _sectionLabel(s.title, colors),
-              const SizedBox(height: 6),
-              _textField(
-                controller: _titleController,
-                hint: s.titleHint,
-                autofocus: true,
-                hasError: _showTitleError,
-                colors: colors,
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeInOut,
-                child: _showTitleError
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          children: [
+                // ── Title field ──
+                _buildTextField(
+                  controller: _titleController,
+                  hint: s.titleHint,
+                  autofocus: true,
+                  hasError: _showTitleError,
+                  colors: colors,
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeInOut,
+                  child: _showTitleError
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(children: [
                             Icon(Icons.error_outline_rounded,
                                 size: 13,
                                 color: Theme.of(context).colorScheme.error),
                             const SizedBox(width: 5),
-                            Text(
-                              s.titleRequired,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 14),
+                            Text(s.titleRequired,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color:
+                                        Theme.of(context).colorScheme.error)),
+                          ]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 14),
 
-              // ── Description ──────────────────────────────────────────
-              _sectionLabel(s.descriptionOptional, colors),
-              const SizedBox(height: 6),
-              _textField(
-                controller: _descController,
-                hint: s.descriptionHint,
-                maxLines: 2,
-                colors: colors,
-              ),
-              const SizedBox(height: 18),
-
-              // ── BS Date ──────────────────────────────────────────────
-              _sectionLabel(s.bsDate, colors),
-              const SizedBox(height: 6),
-              Row(
-                children: [
+                // ── Date + Time row ──
+                Row(children: [
                   Expanded(
                     flex: 3,
-                    child: _dropdown(
-                      value: _year,
-                      items: _years,
-                      display: (v) => NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
-                      onChanged: (v) => setState(() => _year = v!),
+                    child: _tappableField(
+                      icon: Icons.calendar_today_rounded,
+                      label: dateLabel,
+                      onTap: _pickDate,
                       colors: colors,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 4,
-                    child: _dropdown(
-                      value: _month,
-                      items: _months,
-                      display: (v) => s.monthNames[v - 1],
-                      onChanged: (v) => setState(() => _month = v!),
-                      colors: colors,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     flex: 2,
-                    child: _dropdown(
-                      value: days.contains(_day) ? _day : days.first,
-                      items: days,
-                      display: (v) => NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
-                      onChanged: (v) => setState(() => _day = v!),
+                    child: _tappableField(
+                      icon: Icons.access_time_rounded,
+                      label: timeLabel,
+                      onTap: _pickTime,
                       colors: colors,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 14),
+                ]),
+                const SizedBox(height: 16),
 
-              // ── Time ─────────────────────────────────────────────────
-              _sectionLabel(s.time, colors),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: _pickTime,
-                child: Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: colors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.access_time_rounded,
-                          size: 18, color: colors.textSecondary),
-                      const SizedBox(width: 10),
-                      Text(
-                        timeLabel,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                // ── More options toggle ──
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _showMoreOptions = !_showMoreOptions),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(children: [
+                      Icon(
+                        _showMoreOptions
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 20,
+                        color: AppTheme.accent,
                       ),
-                      const Spacer(),
-                      Icon(Icons.keyboard_arrow_down_rounded,
-                          color: colors.textSecondary, size: 18),
-                    ],
+                      const SizedBox(width: 6),
+                      Text(s.moreOptions,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.accent,
+                          )),
+                      // Show selected category badge when collapsed
+                      if (!_showMoreOptions &&
+                          _category != ReminderCategory.personal) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_category.icon,
+                                    size: 12, color: AppTheme.accent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _category.localizedLabel(isNepali),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ]),
+                        ),
+                      ],
+                    ]),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
 
-              // ── Category ─────────────────────────────────────────────
-              _sectionLabel(s.category, colors),
-              const SizedBox(height: 8),
-              _PillSelector<ReminderCategory>(
-                values: ReminderCategory.values,
-                selected: _category,
-                label: (v) => v.localizedLabel(isNepali),
-                icon: (v) => v.icon,
-                onTap: (v) => setState(() => _category = v),
-                colors: colors,
-              ),
-              const SizedBox(height: 16),
+                // ── Expandable section ──
+                AnimatedCrossFade(
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: _buildMoreOptions(colors, isNepali, s),
+                  crossFadeState: _showMoreOptions
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 250),
+                  sizeCurve: Curves.easeInOut,
+                ),
+                const SizedBox(height: 20),
 
-              // ── Recurrence ───────────────────────────────────────────
-              _sectionLabel(s.recurrence, colors),
-              const SizedBox(height: 8),
-              _PillSelector<ReminderRecurrence>(
-                values: ReminderRecurrence.values,
-                selected: _recurrence,
-                label: (v) => v.localizedLabel(isNepali),
-                onTap: (v) => setState(() => _recurrence = v),
-                colors: colors,
-              ),
-              const SizedBox(height: 16),
-
-              // ── Alert offset ─────────────────────────────────────────
-              _sectionLabel(s.alertWhen, colors),
-              const SizedBox(height: 8),
-              _PillSelector<AlertOffset>(
-                values: AlertOffset.values,
-                selected: _alertOffset,
-                label: (v) => v.localizedLabel(isNepali),
-                onTap: (v) => setState(() => _alertOffset = v),
-                colors: colors,
-              ),
-              const SizedBox(height: 24),
-
-              // ── Actions ──────────────────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        side: BorderSide(color: colors.divider),
-                      ),
-                      child: Text(
-                        s.cancel,
-                        style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ),
+                // ── Save button (full width) ──
+                FilledButton(
+                  onPressed: _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.accent,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _submit,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.accent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                        s.save,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+                  child: Text(s.save,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  // ── Shared UI helpers ─────────────────────────────────────────────
+  // ── More options panel ───────────────────────────────────────────────
+
+  Widget _buildMoreOptions(NepaliThemeColors colors, bool isNepali, S s) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Category icon grid
+          _sectionLabel(s.category, colors),
+          const SizedBox(height: 8),
+          _CategoryGrid(
+            selected: _category,
+            isNepali: isNepali,
+            onTap: (v) => setState(() => _category = v),
+            colors: colors,
+          ),
+          const SizedBox(height: 16),
+
+          // Recurrence horizontal chips
+          _sectionLabel(s.recurrence, colors),
+          const SizedBox(height: 8),
+          _HorizontalChips<ReminderRecurrence>(
+            values: ReminderRecurrence.values,
+            selected: _recurrence,
+            label: (v) => v.localizedLabel(isNepali),
+            onTap: (v) => setState(() => _recurrence = v),
+            colors: colors,
+          ),
+          const SizedBox(height: 16),
+
+          // Alert horizontal chips
+          _sectionLabel(s.alertWhen, colors),
+          const SizedBox(height: 8),
+          _HorizontalChips<AlertOffset>(
+            values: AlertOffset.values,
+            selected: _alertOffset,
+            label: (v) => v.localizedLabel(isNepali),
+            onTap: (v) => setState(() => _alertOffset = v),
+            colors: colors,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Shared helpers ───────────────────────────────────────────────────
 
   Widget _sectionLabel(String text, NepaliThemeColors colors) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: colors.textSecondary,
+    return Text(text,
+        style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: colors.textSecondary));
+  }
+
+  Widget _tappableField({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required NepaliThemeColors colors,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: colors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(children: [
+          Icon(icon, size: 16, color: colors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary),
+                overflow: TextOverflow.ellipsis),
+          ),
+          Icon(Icons.keyboard_arrow_down_rounded,
+              color: colors.textSecondary, size: 18),
+        ]),
       ),
     );
   }
 
-  Widget _textField({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     required NepaliThemeColors colors,
@@ -410,125 +650,158 @@ class _AddReminderDialogState extends ConsumerState<AddReminderDialog> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: hasError
-              ? BorderSide(color: errorColor.withValues(alpha: 0.6), width: 1.5)
+              ? BorderSide(
+                  color: errorColor.withValues(alpha: 0.6), width: 1.5)
               : BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: hasError
               ? BorderSide(color: errorColor, width: 1.5)
-              : BorderSide(color: AppTheme.accent.withValues(alpha: 0.5), width: 1.5),
+              : BorderSide(
+                  color: AppTheme.accent.withValues(alpha: 0.5), width: 1.5),
         ),
-      ),
-    );
-  }
-
-  Widget _dropdown<T>({
-    required T value,
-    required List<T> items,
-    required String Function(T) display,
-    required ValueChanged<T?> onChanged,
-    required NepaliThemeColors colors,
-  }) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: colors.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButton<T>(
-        value: items.contains(value) ? value : items.first,
-        isExpanded: true,
-        underline: const SizedBox.shrink(),
-        dropdownColor: colors.cardColor,
-        icon: Icon(Icons.keyboard_arrow_down_rounded,
-            color: colors.textSecondary, size: 18),
-        style: TextStyle(
-            color: colors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-        items: items
-            .map((v) => DropdownMenuItem(value: v, child: Text(display(v))))
-            .toList(),
-        onChanged: onChanged,
       ),
     );
   }
 }
 
-/// Horizontally-wrapping pill chip selector for enum values.
-class _PillSelector<T> extends StatelessWidget {
+// ═══════════════════════════════════════════════════════════════════════════
+// Category icon grid — 2 rows × 5 columns
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _CategoryGrid extends StatelessWidget {
+  final ReminderCategory selected;
+  final bool isNepali;
+  final void Function(ReminderCategory) onTap;
+  final NepaliThemeColors colors;
+
+  const _CategoryGrid({
+    required this.selected,
+    required this.isNepali,
+    required this.onTap,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cats = ReminderCategory.values;
+    return Column(children: [
+      Row(children: cats.sublist(0, 5).map(_cell).toList()),
+      const SizedBox(height: 8),
+      Row(children: cats.sublist(5, 10).map(_cell).toList()),
+    ]);
+  }
+
+  Widget _cell(ReminderCategory cat) {
+    final isSelected = cat == selected;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(cat),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.accent.withValues(alpha: 0.15)
+                : colors.surfaceVariant,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? AppTheme.accent.withValues(alpha: 0.6)
+                  : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(cat.icon,
+                size: 20,
+                color: isSelected ? AppTheme.accent : colors.textSecondary),
+            const SizedBox(height: 4),
+            Text(
+              cat.localizedLabel(isNepali),
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppTheme.accent : colors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Horizontal scrolling chip selector
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _HorizontalChips<T> extends StatelessWidget {
   final List<T> values;
   final T selected;
   final String Function(T) label;
-  final IconData Function(T)? icon;
   final void Function(T) onTap;
   final NepaliThemeColors colors;
 
-  const _PillSelector({
+  const _HorizontalChips({
     required this.values,
     required this.selected,
     required this.label,
     required this.onTap,
     required this.colors,
-    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: values.map((v) {
-        final isSelected = v == selected;
-        return GestureDetector(
-          onTap: () => onTap(v),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppTheme.accent.withValues(alpha: 0.15)
-                  : colors.surfaceVariant,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? AppTheme.accent.withValues(alpha: 0.6)
-                    : Colors.transparent,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon!(v),
-                    size: 13,
-                    color: isSelected ? AppTheme.accent : colors.textSecondary,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: values.map((v) {
+          final isSelected = v == selected;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onTap(v),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.accent.withValues(alpha: 0.15)
+                      : colors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.accent.withValues(alpha: 0.6)
+                        : Colors.transparent,
+                    width: 1.5,
                   ),
-                  const SizedBox(width: 5),
-                ],
-                Text(
+                ),
+                child: Text(
                   label(v),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color:
-                        isSelected ? AppTheme.accent : colors.textSecondary,
+                    color: isSelected ? AppTheme.accent : colors.textSecondary,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

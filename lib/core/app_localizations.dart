@@ -166,6 +166,7 @@ class S {
   String get cancel => isNepali ? 'रद्द' : 'Cancel';
   String get save => isNepali ? 'सुरक्षित गर्नुहोस्' : 'Save';
   String get addReminder => isNepali ? 'स्मरण थप्नुहोस्' : 'Add reminder';
+  String get moreOptions => isNepali ? 'थप विकल्पहरू' : 'More options';
 
   // ─── Converter Screen ─────────────────────────────────────────────
   String get dateConversion => isNepali ? 'मिति रूपान्तरण' : 'Date conversion';
