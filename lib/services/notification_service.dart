@@ -75,6 +75,7 @@ class NotificationService {
 
     switch (reminder.recurrence) {
       case ReminderRecurrence.none:
+      case ReminderRecurrence.once:
         await _scheduleOnce(reminder, reminder.bsYear, reminder.bsMonth,
             reminder.bsDay, 0);
       case ReminderRecurrence.daily:

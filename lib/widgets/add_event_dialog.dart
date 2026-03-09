@@ -10,14 +10,13 @@ import '../models/reminder.dart';
 import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
 
-/// Opens the Add Reminder bottom sheet from anywhere in the app.
-void showAddReminderSheet(BuildContext context, {NepaliDateTime? initialDate}) {
+void showAddReminderSheet(BuildContext context, {NepaliDateTime? initialDate, Reminder? existingReminder}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _AddReminderSheet(initialDate: initialDate),
+    builder: (_) => _AddReminderSheet(initialDate: initialDate, existingReminder: existingReminder),
   );
 }
 
@@ -27,7 +26,8 @@ void showAddReminderSheet(BuildContext context, {NepaliDateTime? initialDate}) {
 
 class _AddReminderSheet extends ConsumerStatefulWidget {
   final NepaliDateTime? initialDate;
-  const _AddReminderSheet({this.initialDate});
+  final Reminder? existingReminder;
+  const _AddReminderSheet({this.initialDate, this.existingReminder});
 
   @override
   ConsumerState<_AddReminderSheet> createState() => _AddReminderSheetState();
@@ -37,7 +37,7 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
   final _titleController = TextEditingController();
   late int _year, _month, _day, _hour, _minute;
   ReminderCategory _category = ReminderCategory.personal;
-  ReminderRecurrence _recurrence = ReminderRecurrence.none;
+  ReminderRecurrence _recurrence = ReminderRecurrence.daily;
   AlertOffset _alertOffset = AlertOffset.atTime;
   bool _showTitleError = false;
   bool _showMoreOptions = false;
@@ -45,14 +45,28 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
   @override
   void initState() {
     super.initState();
-    final now = widget.initialDate ?? NepaliDateTime.now();
-    _year = now.year;
-    _month = now.month;
-    _day = now.day;
-    final adNow = DateTime.now();
-    // Round up to next hour for convenience.
-    _hour = adNow.minute > 0 ? (adNow.hour + 1) % 24 : adNow.hour;
-    _minute = 0;
+    if (widget.existingReminder != null) {
+      final r = widget.existingReminder!;
+      _titleController.text = r.title;
+      _year = r.bsYear;
+      _month = r.bsMonth;
+      _day = r.bsDay;
+      _hour = r.hour;
+      _minute = r.minute;
+      _category = r.category;
+      _recurrence = r.recurrence;
+      _alertOffset = r.alertOffset;
+      _showMoreOptions = true; // Expand options to show they're set
+    } else {
+      final now = widget.initialDate ?? NepaliDateTime.now();
+      _year = now.year;
+      _month = now.month;
+      _day = now.day;
+      final adNow = DateTime.now();
+      // Round up to next hour for convenience.
+      _hour = adNow.minute > 0 ? (adNow.hour + 1) % 24 : adNow.hour;
+      _minute = 0;
+    }
     _titleController.addListener(_onTitleChanged);
   }
 
@@ -296,10 +310,12 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
     final maxDay = _daysInMonth();
     final day = _day > maxDay ? maxDay : _day;
 
+    final isEdit = widget.existingReminder != null;
+
     final reminder = Reminder(
-      id: '${DateTime.now().millisecondsSinceEpoch}_${title.hashCode}',
+      id: isEdit ? widget.existingReminder!.id : '${DateTime.now().millisecondsSinceEpoch}_${title.hashCode}',
       title: title,
-      description: '',
+      description: isEdit ? widget.existingReminder!.description : '',
       bsYear: _year,
       bsMonth: _month,
       bsDay: day,
@@ -308,9 +324,14 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
       category: _category,
       recurrence: _recurrence,
       alertOffset: _alertOffset,
+      isEnabled: isEdit ? widget.existingReminder!.isEnabled : true,
     );
 
-    ref.read(remindersProvider.notifier).addReminder(reminder);
+    if (isEdit) {
+      ref.read(remindersProvider.notifier).updateReminder(reminder);
+    } else {
+      ref.read(remindersProvider.notifier).addReminder(reminder);
+    }
     Navigator.pop(context);
   }
 
@@ -381,7 +402,10 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(s.addNewReminder,
+                    child: Text(
+                        widget.existingReminder != null
+                            ? "Edit Reminder"
+                            : s.addNewReminder,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -554,7 +578,14 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
           _CategoryGrid(
             selected: _category,
             isNepali: isNepali,
-            onTap: (v) => setState(() => _category = v),
+            onTap: (v) {
+              setState(() {
+                _category = v;
+                if (v == ReminderCategory.birthday || v == ReminderCategory.anniversary) {
+                  _recurrence = ReminderRecurrence.yearly;
+                }
+              });
+            },
             colors: colors,
           ),
           const SizedBox(height: 16),

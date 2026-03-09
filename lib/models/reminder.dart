@@ -16,6 +16,7 @@ enum ReminderCategory {
 
 enum ReminderRecurrence {
   none,
+  once,
   daily,
   weekly,
   monthly,

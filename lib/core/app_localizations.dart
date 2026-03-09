@@ -151,18 +151,14 @@ class S {
       isNepali ? 'नयाँ स्मरण थप्नुहोस्' : 'Add new reminder';
   String get title => isNepali ? 'शीर्षक *' : 'Title *';
   String get titleHint =>
-      isNepali ? 'स्मरणको शीर्षक लेख्नुहोस्...' : 'Enter reminder title...';
+      isNepali ? 'के को स्मरण गराउने?' : 'What should I remind of?';
   String get titleRequired =>
-      isNepali ? 'शीर्षक अनिवार्य छ' : 'Title is required';
-  String get descriptionOptional =>
-      isNepali ? 'विवरण (ऐच्छिक)' : 'Description (optional)';
-  String get descriptionHint =>
-      isNepali ? 'छोटो विवरण...' : 'Short description...';
+      isNepali ? 'स्मरण राख्न भुल्नुभयो' : 'You missed to enter reminder';
   String get bsDate => isNepali ? 'बि.सं. मिति' : 'BS Date';
   String get time => isNepali ? 'समय' : 'Time';
-  String get category => isNepali ? 'श्रेणी' : 'Category';
-  String get recurrence => isNepali ? 'दोहोर्याउने' : 'Recurrence';
-  String get alertWhen => isNepali ? 'सूचना कहिले' : 'Alert when';
+  String get category => isNepali ? 'श्रेणी?' : 'Category';
+  String get recurrence => isNepali ? 'कहिले दोहोर्याउने हो?' : 'Recurrence';
+  String get alertWhen => isNepali ? 'कहिले सूचना पठाउने?' : 'When to send notification?';
   String get cancel => isNepali ? 'रद्द' : 'Cancel';
   String get save => isNepali ? 'सुरक्षित गर्नुहोस्' : 'Save';
   String get addReminder => isNepali ? 'स्मरण थप्नुहोस्' : 'Add reminder';
@@ -241,16 +237,19 @@ class S {
   }
 
   // ─── Reminder Recurrence ──────────────────────────────────────────
-  String get recNone => isNepali ? 'एक पटक' : 'Once';
+  String get recNone => isNepali ? 'पर्दैन' : 'None';
   String get recDaily => isNepali ? 'दैनिक' : 'Daily';
   String get recWeekly => isNepali ? 'साप्ताहिक' : 'Weekly';
   String get recMonthly => isNepali ? 'मासिक' : 'Monthly';
   String get recYearly => isNepali ? 'वार्षिक' : 'Yearly';
+  String get recOnce => isNepali ? 'एक पटक' : 'Once';
 
   String recurrenceLabel(RecurrenceKey rec) {
     switch (rec) {
       case RecurrenceKey.none:
         return recNone;
+      case RecurrenceKey.once:
+        return recOnce;
       case RecurrenceKey.daily:
         return recDaily;
       case RecurrenceKey.weekly:
@@ -319,6 +318,6 @@ enum ReminderCategoryKey {
   school,
 }
 
-enum RecurrenceKey { none, daily, weekly, monthly, yearly }
+enum RecurrenceKey { none, once, daily, weekly, monthly, yearly }
 
 enum AlertKey { atTime, fifteenMin, oneHour, oneDay }
