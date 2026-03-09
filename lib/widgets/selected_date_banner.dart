@@ -7,7 +7,7 @@ import '../core/nepali_holidays.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/events_provider.dart';
 import '../providers/language_provider.dart';
-import 'add_event_dialog.dart' show AddReminderDialog;
+import 'add_event_dialog.dart' show showAddReminderSheet;
 
 /// A bottom card that shows details of the selected date,
 /// including the Nepali full day name, AD equivalent,
@@ -206,10 +206,7 @@ class SelectedDateBanner extends ConsumerWidget {
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AddReminderDialog(initialDate: selected),
-                );
+                showAddReminderSheet(context, initialDate: selected);
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
