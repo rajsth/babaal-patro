@@ -103,6 +103,23 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
     }
   }
 
+  Future<void> updateReminder(Reminder reminder) async {
+    state = [
+      for (final r in state)
+        if (r.id == reminder.id) reminder else r,
+    ];
+    await _persist();
+    if (reminder.isEnabled) {
+      await NotificationService.instance.scheduleReminder(reminder);
+    } else {
+      await NotificationService.instance.cancelReminder(reminder.id);
+    }
+    final uid = _ref.read(authProvider)?.uid;
+    if (uid != null) {
+      await FirestoreService.instance.upsertReminder(uid, reminder);
+    }
+  }
+
   Future<void> removeReminder(String id) async {
     state = state.where((r) => r.id != id).toList();
     await _persist();
