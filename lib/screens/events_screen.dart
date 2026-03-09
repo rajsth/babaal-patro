@@ -267,9 +267,6 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           reminder: reminder,
                           colors: colors,
                           isNepali: isNepali,
-                          onToggle: () => ref
-                              .read(remindersProvider.notifier)
-                              .toggleReminder(reminder.id),
                           onDelete: () {
                             Haptic.light();
                             ref
@@ -491,7 +488,6 @@ class _ReminderTile extends StatelessWidget {
   final Reminder reminder;
   final NepaliThemeColors colors;
   final bool isNepali;
-  final VoidCallback onToggle;
   final VoidCallback onDelete;
 
   const _ReminderTile({
@@ -499,7 +495,6 @@ class _ReminderTile extends StatelessWidget {
     required this.reminder,
     required this.colors,
     required this.isNepali,
-    required this.onToggle,
     required this.onDelete,
   });
 
@@ -553,19 +548,23 @@ class _ReminderTile extends StatelessWidget {
         alignment: Alignment.centerRight,
         child: Icon(Icons.delete_outline, color: AppTheme.saturday, size: 22),
       ),
-      child: AnimatedOpacity(
-        opacity: reminder.isEnabled ? 1.0 : 0.45,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            color: colors.cardColor,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: colors.cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colors.divider),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colors.divider),
-          ),
-          child: SelectionArea(
+            onTap: () {
+              Haptic.selection();
+              showAddReminderSheet(context, existingReminder: reminder);
+            },
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -662,15 +661,6 @@ class _ReminderTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  Switch(
-                    value: reminder.isEnabled,
-                    onChanged: (_) {
-                      Haptic.selection();
-                      onToggle();
-                    },
-                    activeThumbColor: AppTheme.accent,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ],
               ),
