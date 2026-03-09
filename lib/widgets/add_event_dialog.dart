@@ -207,14 +207,17 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
                   Expanded(
                     child: Row(children: [
                       _wheel(
-                        flex: 2,
-                        initial: tempDay - 1,
-                        count: days.length,
+                        flex: 3,
+                        initial: tempYear - startYear,
+                        count: years.length,
                         label: (i) => NepaliDateHelper.localizedNumeral(
-                            days[i],
+                            years[i],
                             isNepali: isNepali),
-                        onChanged: (i) =>
-                            setPickerState(() => tempDay = days[i]),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = years[i];
+                          final m = _daysInMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
                         colors: colors,
                       ),
                       _wheel(
@@ -230,17 +233,14 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
                         colors: colors,
                       ),
                       _wheel(
-                        flex: 3,
-                        initial: tempYear - startYear,
-                        count: years.length,
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
                         label: (i) => NepaliDateHelper.localizedNumeral(
-                            years[i],
+                            days[i],
                             isNepali: isNepali),
-                        onChanged: (i) => setPickerState(() {
-                          tempYear = years[i];
-                          final m = _daysInMonth(tempYear, tempMonth);
-                          if (tempDay > m) tempDay = m;
-                        }),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
                         colors: colors,
                       ),
                     ]),
@@ -333,11 +333,15 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
         '${s.monthNames[_month - 1]} '
         '${NepaliDateHelper.localizedNumeral(_year, isNepali: isNepali)}';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
       child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.55,
@@ -531,6 +535,7 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
             ),
           );
         },
+      ),
       ),
     );
   }
