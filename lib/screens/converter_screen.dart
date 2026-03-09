@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
@@ -32,10 +33,17 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
   static final List<int> _adYears = List.generate(90, (i) => 1944 + i);
   static final List<int> _months12 = List.generate(12, (i) => i + 1);
   static final List<int> _bsYears = List.generate(91, (i) => 2000 + i);
-  static final List<int> _bsDays32 = List.generate(32, (i) => i + 1);
 
   int _daysInAdMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
+  }
+
+  int _daysInBsMonth([int? y, int? m]) {
+    try {
+      return NepaliDateTime(y ?? _bsYear, m ?? _bsMonth).totalDays;
+    } catch (_) {
+      return 30;
+    }
   }
 
   // BS → AD
@@ -100,6 +108,262 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
         _bsToAdResult = s.invalidDate;
       });
     }
+  }
+
+  Future<void> _pickAdDate() async {
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
+    final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+
+    int tempYear = _adYear;
+    int tempMonth = _adMonth;
+    int tempDay = _adDay;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setPickerState) {
+          int maxDay = _daysInAdMonth(tempYear, tempMonth);
+          if (tempDay > maxDay) tempDay = maxDay;
+          final days = List.generate(maxDay, (i) => i + 1);
+
+          return SafeArea(
+            child: SizedBox(
+              height: 300,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+                    child: Column(children: [
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.divider,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("AD Date",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                              )),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _adYear = tempYear;
+                                _adMonth = tempMonth;
+                                _adDay = tempDay;
+                              });
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(s.save,
+                                style: TextStyle(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    ]),
+                  ),
+                  Expanded(
+                    child: Row(children: [
+                      _wheel(
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
+                        label: (i) => days[i].toString(),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: tempMonth - 1,
+                        count: 12,
+                        label: (i) => _adMonthNames[i],
+                        onChanged: (i) => setPickerState(() {
+                          tempMonth = _months12[i];
+                          final m = _daysInAdMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: _adYears.indexOf(tempYear),
+                        count: _adYears.length,
+                        label: (i) => _adYears[i].toString(),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = _adYears[i];
+                          final m = _daysInAdMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _pickBsDate() async {
+    final isNepali = ref.read(languageProvider);
+    final s = S.of(isNepali);
+    final colors = Theme.of(context).extension<NepaliThemeColors>()!;
+
+    int tempYear = _bsYear;
+    int tempMonth = _bsMonth;
+    int tempDay = _bsDay;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: colors.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setPickerState) {
+          int maxDay = _daysInBsMonth(tempYear, tempMonth);
+          if (tempDay > maxDay) tempDay = maxDay;
+          final days = List.generate(maxDay, (i) => i + 1);
+
+          return SafeArea(
+            child: SizedBox(
+              height: 300,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+                    child: Column(children: [
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.divider,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(s.bsDate,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                              )),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _bsYear = tempYear;
+                                _bsMonth = tempMonth;
+                                _bsDay = tempDay;
+                              });
+                              Navigator.pop(ctx);
+                            },
+                            child: Text(s.save,
+                                style: TextStyle(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    ]),
+                  ),
+                  Expanded(
+                    child: Row(children: [
+                      _wheel(
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
+                        label: (i) => NepaliDateHelper.localizedNumeral(
+                            days[i],
+                            isNepali: isNepali),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: tempMonth - 1,
+                        count: 12,
+                        label: (i) => s.monthNames[i],
+                        onChanged: (i) => setPickerState(() {
+                          tempMonth = _months12[i];
+                          final m = _daysInBsMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                      _wheel(
+                        flex: 3,
+                        initial: _bsYears.indexOf(tempYear),
+                        count: _bsYears.length,
+                        label: (i) => NepaliDateHelper.localizedNumeral(
+                            _bsYears[i],
+                            isNepali: isNepali),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = _bsYears[i];
+                          final m = _daysInBsMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
+                        colors: colors,
+                      ),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  static Widget _wheel({
+    required int flex,
+    required int initial,
+    required int count,
+    required String Function(int) label,
+    required ValueChanged<int> onChanged,
+    required NepaliThemeColors colors,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: CupertinoPicker(
+        scrollController: FixedExtentScrollController(initialItem: initial),
+        itemExtent: 40,
+        diameterRatio: 1.2,
+        squeeze: 1.0,
+        selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
+          background: AppTheme.accent.withValues(alpha: 0.08),
+        ),
+        onSelectedItemChanged: onChanged,
+        children: List.generate(
+          count,
+          (i) => Center(
+            child: Text(label(i),
+                style: TextStyle(fontSize: 17, color: colors.textPrimary)),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -172,6 +436,8 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
   Widget _buildAdToBsTab(NepaliThemeColors colors, S s) {
     final maxDay = _daysInAdMonth(_adYear, _adMonth);
     if (_adDay > maxDay) _adDay = maxDay;
+    
+    final dateLabel = '$_adDay ${_adMonthNames[_adMonth - 1]} $_adYear';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
@@ -217,41 +483,11 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                   ],
                 ),
                 const SizedBox(height: 20),
-                // Year
-                _styledDropdown(
-                  label: 'Year',
-                  value: _adYear,
-                  items: _adYears,
-                  displayBuilder: (v) => v.toString(),
-                  onChanged: (v) => setState(() => _adYear = v!),
+                _tappableField(
+                  icon: Icons.calendar_today_rounded,
+                  label: dateLabel,
+                  onTap: _pickAdDate,
                   colors: colors,
-                ),
-                const SizedBox(height: 12),
-                // Month and Day row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _styledDropdown(
-                        label: 'Month',
-                        value: _adMonth,
-                        items: _months12,
-                        displayBuilder: (v) => _adMonthNames[v - 1],
-                        onChanged: (v) => setState(() => _adMonth = v!),
-                        colors: colors,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _styledDropdown(
-                        label: 'Day',
-                        value: _adDay,
-                        items: List.generate(maxDay, (i) => i + 1),
-                        displayBuilder: (v) => v.toString(),
-                        onChanged: (v) => setState(() => _adDay = v!),
-                        colors: colors,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -298,6 +534,14 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
   }
 
   Widget _buildBsToAdTab(NepaliThemeColors colors, S s, bool isNepali) {
+    final maxDay = _daysInBsMonth(_bsYear, _bsMonth);
+    if (_bsDay > maxDay) _bsDay = maxDay;
+    
+    final dateLabel =
+        '${NepaliDateHelper.localizedNumeral(_bsDay, isNepali: isNepali)} '
+        '${s.monthNames[_bsMonth - 1]} '
+        '${NepaliDateHelper.localizedNumeral(_bsYear, isNepali: isNepali)}';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
       child: Center(
@@ -342,44 +586,11 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                   ],
                 ),
                 const SizedBox(height: 20),
-                // Year
-                _styledDropdown(
-                  label: s.year,
-                  value: _bsYear,
-                  items: _bsYears,
-                  displayBuilder: (v) =>
-                      NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
-                  onChanged: (v) => setState(() => _bsYear = v!),
+                _tappableField(
+                  icon: Icons.calendar_today_rounded,
+                  label: dateLabel,
+                  onTap: _pickBsDate,
                   colors: colors,
-                ),
-                const SizedBox(height: 12),
-                // Month and Day row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _styledDropdown(
-                        label: s.month,
-                        value: _bsMonth,
-                        items: _months12,
-                        displayBuilder: (v) =>
-                            s.monthNames[v - 1],
-                        onChanged: (v) => setState(() => _bsMonth = v!),
-                        colors: colors,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _styledDropdown(
-                        label: s.day,
-                        value: _bsDay,
-                        items: _bsDays32,
-                        displayBuilder: (v) =>
-                            NepaliDateHelper.localizedNumeral(v, isNepali: isNepali),
-                        onChanged: (v) => setState(() => _bsDay = v!),
-                        colors: colors,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -425,58 +636,36 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
     );
   }
 
-  Widget _styledDropdown({
+  Widget _tappableField({
+    required IconData icon,
     required String label,
-    required int value,
-    required List<int> items,
-    required String Function(int) displayBuilder,
-    required ValueChanged<int?> onChanged,
+    required VoidCallback onTap,
     required NepaliThemeColors colors,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: colors.textSecondary,
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: colors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
         ),
-        const SizedBox(height: 6),
-        Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: colors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
+        child: Row(children: [
+          Icon(icon, size: 16, color: colors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textPrimary),
+                overflow: TextOverflow.ellipsis),
           ),
-          child: DropdownButton<int>(
-            value: items.contains(value) ? value : items.first,
-            isExpanded: true,
-            underline: const SizedBox.shrink(),
-            dropdownColor: colors.cardColor,
-            icon: Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: colors.textSecondary,
-              size: 20,
-            ),
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-            items: items
-                .map((v) => DropdownMenuItem(
-                      value: v,
-                      child: Text(displayBuilder(v)),
-                    ))
-                .toList(),
-            onChanged: onChanged,
-          ),
-        ),
-      ],
+          Icon(Icons.keyboard_arrow_down_rounded,
+              color: colors.textSecondary, size: 18),
+        ]),
+      ),
     );
   }
 
