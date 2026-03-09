@@ -178,12 +178,15 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                   Expanded(
                     child: Row(children: [
                       _wheel(
-                        flex: 2,
-                        initial: tempDay - 1,
-                        count: days.length,
-                        label: (i) => days[i].toString(),
-                        onChanged: (i) =>
-                            setPickerState(() => tempDay = days[i]),
+                        flex: 3,
+                        initial: _adYears.indexOf(tempYear),
+                        count: _adYears.length,
+                        label: (i) => _adYears[i].toString(),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = _adYears[i];
+                          final m = _daysInAdMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
                         colors: colors,
                       ),
                       _wheel(
@@ -199,15 +202,12 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                         colors: colors,
                       ),
                       _wheel(
-                        flex: 3,
-                        initial: _adYears.indexOf(tempYear),
-                        count: _adYears.length,
-                        label: (i) => _adYears[i].toString(),
-                        onChanged: (i) => setPickerState(() {
-                          tempYear = _adYears[i];
-                          final m = _daysInAdMonth(tempYear, tempMonth);
-                          if (tempDay > m) tempDay = m;
-                        }),
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
+                        label: (i) => days[i].toString(),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
                         colors: colors,
                       ),
                     ]),
@@ -289,14 +289,17 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                   Expanded(
                     child: Row(children: [
                       _wheel(
-                        flex: 2,
-                        initial: tempDay - 1,
-                        count: days.length,
+                        flex: 3,
+                        initial: _bsYears.indexOf(tempYear),
+                        count: _bsYears.length,
                         label: (i) => NepaliDateHelper.localizedNumeral(
-                            days[i],
+                            _bsYears[i],
                             isNepali: isNepali),
-                        onChanged: (i) =>
-                            setPickerState(() => tempDay = days[i]),
+                        onChanged: (i) => setPickerState(() {
+                          tempYear = _bsYears[i];
+                          final m = _daysInBsMonth(tempYear, tempMonth);
+                          if (tempDay > m) tempDay = m;
+                        }),
                         colors: colors,
                       ),
                       _wheel(
@@ -312,17 +315,14 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
                         colors: colors,
                       ),
                       _wheel(
-                        flex: 3,
-                        initial: _bsYears.indexOf(tempYear),
-                        count: _bsYears.length,
+                        flex: 2,
+                        initial: tempDay - 1,
+                        count: days.length,
                         label: (i) => NepaliDateHelper.localizedNumeral(
-                            _bsYears[i],
+                            days[i],
                             isNepali: isNepali),
-                        onChanged: (i) => setPickerState(() {
-                          tempYear = _bsYears[i];
-                          final m = _daysInBsMonth(tempYear, tempMonth);
-                          if (tempDay > m) tempDay = m;
-                        }),
+                        onChanged: (i) =>
+                            setPickerState(() => tempDay = days[i]),
                         colors: colors,
                       ),
                     ]),
