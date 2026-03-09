@@ -37,7 +37,7 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
   final _titleController = TextEditingController();
   late int _year, _month, _day, _hour, _minute;
   ReminderCategory _category = ReminderCategory.personal;
-  ReminderRecurrence _recurrence = ReminderRecurrence.none;
+  ReminderRecurrence _recurrence = ReminderRecurrence.daily;
   AlertOffset _alertOffset = AlertOffset.atTime;
   bool _showTitleError = false;
   bool _showMoreOptions = false;
@@ -578,7 +578,14 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
           _CategoryGrid(
             selected: _category,
             isNepali: isNepali,
-            onTap: (v) => setState(() => _category = v),
+            onTap: (v) {
+              setState(() {
+                _category = v;
+                if (v == ReminderCategory.birthday || v == ReminderCategory.anniversary) {
+                  _recurrence = ReminderRecurrence.yearly;
+                }
+              });
+            },
             colors: colors,
           ),
           const SizedBox(height: 16),
