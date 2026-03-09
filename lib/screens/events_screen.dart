@@ -9,7 +9,7 @@ import '../models/reminder.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
-import '../widgets/add_event_dialog.dart';
+import '../widgets/add_event_dialog.dart' show showAddReminderSheet;
 
 int _compareReminders(Reminder a, Reminder b) {
   if (a.isEnabled != b.isEnabled) return a.isEnabled ? -1 : 1;
@@ -201,10 +201,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (_) => const AddReminderDialog(),
-        ),
+        onPressed: () => showAddReminderSheet(context),
         backgroundColor: AppTheme.accent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, color: Colors.white),
