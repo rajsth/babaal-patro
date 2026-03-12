@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
-import '../core/nepali_holidays.dart';
+import '../core/calendar_data_service.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/events_provider.dart';
 import '../providers/language_provider.dart';
@@ -35,7 +35,7 @@ class SelectedDateBanner extends ConsumerWidget {
       selected.month,
       selected.day,
     );
-    final holiday = NepaliHolidays.getHoliday(
+    final holiday = CalendarDataService.getHoliday(
       selected.year,
       selected.month,
       selected.day,

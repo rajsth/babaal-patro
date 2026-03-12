@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
-import '../core/nepali_holidays.dart';
+import '../core/calendar_data_service.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/events_provider.dart';
 import '../providers/language_provider.dart';
@@ -22,7 +22,7 @@ class CalendarGrid extends ConsumerWidget {
     final notifier = ref.read(calendarProvider.notifier);
     final gridDays = state.gridDays;
     final holidays =
-        NepaliHolidays.holidaysInMonth(state.year, state.month);
+        CalendarDataService.holidaysInMonth(state.year, state.month);
     ref.watch(eventsProvider);
     final eventsNotifier = ref.read(eventsProvider.notifier);
     final eventDays =

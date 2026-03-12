@@ -45,6 +45,9 @@ flutter:
 
   assets:
     - assets/images/app_icon.png
+    - assets/data/artifact-2081.json
+    - assets/data/artifact-2082.json
+    - assets/data/artifact-2083.json
 
   fonts:
     - family: NotoSansDevanagari

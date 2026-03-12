@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
-import '../core/nepali_holidays.dart';
+import '../core/calendar_data_service.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/language_provider.dart';
 
@@ -44,7 +44,7 @@ class MonthlyHolidays extends ConsumerWidget {
     // Only rebuild when year or month changes, not on date selection.
     final year = ref.watch(calendarProvider.select((s) => s.year));
     final month = ref.watch(calendarProvider.select((s) => s.month));
-    final holidays = NepaliHolidays.holidaysInMonth(year, month);
+    final holidays = CalendarDataService.holidaysInMonth(year, month);
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
     final isNepali = ref.watch(languageProvider);
     final s = S.of(isNepali);

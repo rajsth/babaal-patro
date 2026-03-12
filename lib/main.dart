@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'core/app_localizations.dart';
+import 'core/calendar_data_service.dart';
 import 'core/home_widget_updater.dart';
 import 'providers/language_provider.dart';
 import 'providers/settings_provider.dart';
@@ -19,6 +20,7 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await CalendarDataService.initialize();
   // Push today's date to the home screen widget (Android + iOS).
   if (!kIsWeb) {
     HomeWidgetUpdater.update();
