@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
-import '../core/nepali_date_helper.dart';
 import '../core/calendar_data_service.dart';
+import '../core/nepali_date_helper.dart';
+import '../models/reminder.dart';
 import '../providers/calendar_provider.dart';
-import '../providers/events_provider.dart';
+import '../providers/reminders_provider.dart';
 import '../providers/language_provider.dart';
 import 'add_event_dialog.dart' show showAddReminderSheet;
 
-/// A bottom card that shows details of the selected date,
-/// including the Nepali full day name, AD equivalent,
-/// holiday name, and user events with add/delete.
+/// A bottom card that shows details of the selected date:
+/// day of week, BS date, AD date, tithi, holiday, panchangam,
+/// user reminders, and an add-reminder CTA.
 class SelectedDateBanner extends ConsumerWidget {
   const SelectedDateBanner({super.key});
 
@@ -25,47 +26,47 @@ class SelectedDateBanner extends ConsumerWidget {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
     final isNepali = ref.watch(languageProvider);
     final s = S.of(isNepali);
+
     final dayName = s.dayFullNames[selected.weekday - 1];
     final nepaliDate =
         '${NepaliDateHelper.localizedNumeral(selected.day, isNepali: isNepali)} '
         '${NepaliDateHelper.monthName(selected.month, isNepali: isNepali)} '
         '${NepaliDateHelper.localizedNumeral(selected.year, isNepali: isNepali)}';
     final adDate = NepaliDateHelper.toADString(
-      selected.year,
-      selected.month,
-      selected.day,
-    );
-    final holiday = CalendarDataService.getHoliday(
-      selected.year,
-      selected.month,
-      selected.day,
-    );
+        selected.year, selected.month, selected.day);
 
-    // Watch the provider but derive only events for the selected date.
-    ref.watch(eventsProvider);
-    final events = ref.read(eventsProvider.notifier).eventsFor(
-          selected.year, selected.month, selected.day);
+    final holiday =
+        CalendarDataService.getHoliday(selected.year, selected.month, selected.day);
+    final tithi =
+        CalendarDataService.getTithi(selected.year, selected.month, selected.day);
+    final panchangam =
+        CalendarDataService.getPanchangam(selected.year, selected.month, selected.day);
+
+    // Filter reminders for the selected BS date.
+    final reminders = ref.watch(remindersProvider).where((r) =>
+        r.bsYear == selected.year &&
+        r.bsMonth == selected.month &&
+        r.bsDay == selected.day).toList();
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeIn,
       transitionBuilder: (child, animation) {
-        final slideAnimation = Tween<Offset>(
-          begin: const Offset(0, 0.15),
-          end: Offset.zero,
-        ).animate(animation);
         return SlideTransition(
-          position: slideAnimation,
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.15),
+            end: Offset.zero,
+          ).animate(animation),
           child: FadeTransition(opacity: animation, child: child),
         );
       },
       child: Container(
         key: ValueKey(
-            '${selected.year}-${selected.month}-${selected.day}-${events.length}'),
+            '${selected.year}-${selected.month}-${selected.day}-${reminders.length}'),
         width: double.infinity,
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
         decoration: BoxDecoration(
           color: colors.cardColor,
           borderRadius: BorderRadius.circular(16),
@@ -74,66 +75,127 @@ class SelectedDateBanner extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ── Day of week ──────────────────────────────────────────
             Text(
               dayName,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 13,
                 color: AppTheme.accentLight,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 4),
+
+            // ── BS Date ──────────────────────────────────────────────
             Text(
               nepaliDate,
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 24,
                 color: colors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              adDate,
-              style: TextStyle(
-                fontSize: 14,
-                color: colors.textSecondary,
-              ),
+            const SizedBox(height: 5),
+
+            // ── AD Date · Tithi ──────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  adDate,
+                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                ),
+                if (tithi != null) ...[
+                  Text(
+                    '  ·  ',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: colors.textSecondary.withValues(alpha: 0.5)),
+                  ),
+                  Text(
+                    tithi,
+                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                  ),
+                ],
+              ],
             ),
-            // Holiday badge
+
+            // ── Holiday badge ─────────────────────────────────────────
             if (holiday != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   color: AppTheme.todayHighlight.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   holiday,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppTheme.todayHighlight,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
-            // Events list
-            if (events.isNotEmpty) ...[
+
+            // ── Panchangam section ────────────────────────────────────
+            if (panchangam.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...events.asMap().entries.map((entry) {
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: colors.divider.withValues(alpha: 0.6)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.panchangam,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textSecondary.withValues(alpha: 0.6),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ...panchangam.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // ── User reminders ────────────────────────────────────────
+            if (reminders.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...reminders.map((reminder) {
                 return Dismissible(
-                  key: ValueKey(
-                      '${selected.year}-${selected.month}-${selected.day}-${entry.key}-${entry.value.title}'),
+                  key: ValueKey(reminder.id),
                   direction: DismissDirection.endToStart,
                   onDismissed: (_) {
-                    ref.read(eventsProvider.notifier).removeEvent(
-                          selected.year,
-                          selected.month,
-                          selected.day,
-                          entry.key,
-                        );
+                    ref
+                        .read(remindersProvider.notifier)
+                        .removeReminder(reminder.id);
                   },
                   background: Container(
                     margin: const EdgeInsets.only(bottom: 8),
@@ -152,45 +214,54 @@ class SelectedDateBanner extends ConsumerWidget {
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 10,
-                    ),
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: colors.surface.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: colors.divider.withValues(alpha: 0.5),
-                      ),
+                          color: colors.divider.withValues(alpha: 0.5)),
                     ),
                     child: Row(
                       children: [
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: entry.value.isRecurring
-                                ? AppTheme.accent
-                                : AppTheme.eventDot,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const SizedBox(width: 8, height: 8),
+                        Icon(
+                          reminder.category.icon,
+                          size: 15,
+                          color: AppTheme.accent.withValues(alpha: 0.8),
                         ),
                         const SizedBox(width: 10),
-                        if (entry.value.isRecurring) ...[
-                          Icon(
-                            Icons.repeat_rounded,
-                            size: 14,
-                            color: AppTheme.accent.withValues(alpha: 0.7),
-                          ),
-                          const SizedBox(width: 4),
-                        ],
                         Expanded(
-                          child: Text(
-                            entry.value.title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: colors.textPrimary,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                reminder.title,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                              if (reminder.description.isNotEmpty)
+                                Text(
+                                  reminder.description,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: colors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        Text(
+                          reminder.timeLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         Icon(
                           Icons.swipe_left_outlined,
                           size: 14,
@@ -202,7 +273,8 @@ class SelectedDateBanner extends ConsumerWidget {
                 );
               }),
             ],
-            // Add event button
+
+            // ── Add reminder CTA ──────────────────────────────────────
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {

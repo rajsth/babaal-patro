@@ -6,7 +6,7 @@ import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../core/calendar_data_service.dart';
 import '../providers/calendar_provider.dart';
-import '../providers/events_provider.dart';
+import '../providers/reminders_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/settings_provider.dart';
 
@@ -23,10 +23,10 @@ class CalendarGrid extends ConsumerWidget {
     final gridDays = state.gridDays;
     final holidays =
         CalendarDataService.holidaysInMonth(state.year, state.month);
-    ref.watch(eventsProvider);
-    final eventsNotifier = ref.read(eventsProvider.notifier);
-    final eventDays =
-        eventsNotifier.eventDaysInMonth(state.year, state.month);
+    final eventDays = ref.watch(remindersProvider)
+        .where((r) => r.bsYear == state.year && r.bsMonth == state.month)
+        .map((r) => r.bsDay)
+        .toSet();
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
     final showBorder = ref.watch(settingsProvider.select((s) => s.showGridBorder));
     final isNepali = ref.watch(languageProvider);
