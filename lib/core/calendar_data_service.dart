@@ -1,18 +1,19 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 
-/// Loads public holidays from the bundled JSON data files (artifact-YYYY.json).
-/// Each JSON entry with `is_public_holiday: true` is indexed by its BS date.
+/// Loads calendar data from the bundled JSON files (artifact-YYYY.json).
+/// Indexes public holidays, panchangam, and tithi keyed by BS date.
 /// Call [initialize] once at app startup before using the lookup methods.
 ///
-/// To add a new year, simply add the file to pubspec.yaml assets — no code
-/// changes required. All `assets/data/artifact-*.json` files are loaded
-/// automatically via AssetManifest.
+/// To add a new year, add the file to pubspec.yaml assets — no code changes
+/// required. All `assets/data/artifact-*.json` files are discovered automatically.
 class CalendarDataService {
   CalendarDataService._();
 
-  // Key: "year-month-day" (BS), Value: joined event names
+  // Key: "year-month-day" (BS)
   static final Map<String, String> _holidays = {};
+  static final Map<String, List<String>> _panchangam = {};
+  static final Map<String, String> _tithi = {};
   static bool _initialized = false;
 
   static Future<void> initialize() async {
@@ -31,15 +32,31 @@ class CalendarDataService {
 
       for (final entry in data.entries) {
         final value = entry.value as Map<String, dynamic>;
-        if (value['is_public_holiday'] != true) continue;
+        final nepaliDate = value['nepali_date'] as String?;
+        if (nepaliDate == null) continue;
 
-        final nepaliDate = value['nepali_date'] as String; // e.g. "2082/11/6"
-        final events = (value['events'] as List<dynamic>).cast<String>();
-        if (events.isEmpty) continue;
-
-        // Convert "2082/11/6" → "2082-11-6"
+        // "2082/11/6" → "2082-11-6"
         final key = nepaliDate.replaceAll('/', '-');
-        _holidays[key] = events.join(' · ');
+
+        // Panchangam — all dates
+        final panchangamRaw = value['panchangam'];
+        if (panchangamRaw is List && panchangamRaw.isNotEmpty) {
+          _panchangam[key] = List<String>.from(panchangamRaw);
+        }
+
+        // Tithi — all dates
+        final tithiRaw = value['tithi'];
+        if (tithiRaw is String && tithiRaw.isNotEmpty) {
+          _tithi[key] = tithiRaw;
+        }
+
+        // Public holidays only
+        if (value['is_public_holiday'] == true) {
+          final eventsRaw = value['events'];
+          if (eventsRaw is List && eventsRaw.isNotEmpty) {
+            _holidays[key] = List<String>.from(eventsRaw).join(' · ');
+          }
+        }
       }
     }
 
@@ -47,14 +64,12 @@ class CalendarDataService {
   }
 
   /// Returns the holiday name(s) for a BS date, or null if not a public holiday.
-  static String? getHoliday(int year, int month, int day) {
-    return _holidays['$year-$month-$day'];
-  }
+  static String? getHoliday(int year, int month, int day) =>
+      _holidays['$year-$month-$day'];
 
   /// Returns true if the given BS date is a public holiday.
-  static bool isHoliday(int year, int month, int day) {
-    return _holidays.containsKey('$year-$month-$day');
-  }
+  static bool isHoliday(int year, int month, int day) =>
+      _holidays.containsKey('$year-$month-$day');
 
   /// Returns all public holidays in a given BS month as {day: name}.
   static Map<int, String> holidaysInMonth(int year, int month) {
@@ -69,4 +84,12 @@ class CalendarDataService {
     }
     return result;
   }
+
+  /// Returns the panchangam items for a BS date, or empty list if unavailable.
+  static List<String> getPanchangam(int year, int month, int day) =>
+      _panchangam['$year-$month-$day'] ?? const [];
+
+  /// Returns the tithi for a BS date, or null if unavailable.
+  static String? getTithi(int year, int month, int day) =>
+      _tithi['$year-$month-$day'];
 }

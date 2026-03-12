@@ -183,6 +183,9 @@ class S {
       isNepali ? 'वर्ष र महिना छान्नुहोस्' : 'Select year & month';
   String get go => isNepali ? 'जानुहोस्' : 'Go';
 
+  // ─── Date Detail Card ─────────────────────────────────────────────
+  String get panchangam => isNepali ? 'पञ्चाङ्ग' : 'Panchang';
+
   // ─── Monthly Holidays ─────────────────────────────────────────────
   String holidaysOf(String monthName) =>
       isNepali ? '$monthNameका बिदाहरू' : 'Holidays in $monthName';
