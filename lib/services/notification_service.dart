@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -28,6 +29,11 @@ class NotificationService {
   static const _channelId = 'babaal_patro_reminders';
   static const _channelName = 'स्मरणहरू';
   static const _channelDesc = 'बबाल पात्रो – स्मरण सूचनाहरू';
+  static const _notifTitle = 'You have a reminder';
+
+  String _notifBody(Reminder reminder) => reminder.description.isEmpty
+      ? reminder.title
+      : '${reminder.title}\n${reminder.description}';
 
   Future<void> init() async {
     if (_initialized) return;
@@ -40,7 +46,7 @@ class NotificationService {
     }
 
     const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_notification');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false, // requested explicitly later
       requestBadgePermission: false,
@@ -48,7 +54,11 @@ class NotificationService {
     );
     const settings =
         InitializationSettings(android: androidSettings, iOS: iosSettings);
-    await _plugin.initialize(settings);
+    try {
+      await _plugin.initialize(settings);
+    } catch (e) {
+      debugPrint('NotificationService: initialize failed: $e');
+    }
     _initialized = true;
   }
 
@@ -73,21 +83,42 @@ class NotificationService {
     await cancelReminder(reminder.id);
     if (!reminder.isEnabled) return;
 
+    // On Android 12 (API 31-32), SCHEDULE_EXACT_ALARM requires explicit user
+    // grant. On Android 13+, USE_EXACT_ALARM is auto-granted for calendar apps.
+    // Fall back to inexactAllowWhileIdle when exact alarms are unavailable so
+    // notifications still fire (possibly a few minutes late).
+    final mode = await _resolveScheduleMode();
+
     switch (reminder.recurrence) {
       case ReminderRecurrence.none:
       case ReminderRecurrence.once:
         await _scheduleOnce(reminder, reminder.bsYear, reminder.bsMonth,
-            reminder.bsDay, 0);
+            reminder.bsDay, 0, mode);
       case ReminderRecurrence.daily:
-        await _scheduleDaily(reminder);
+        await _scheduleDaily(reminder, mode);
       case ReminderRecurrence.weekly:
-        await _scheduleWeekly(reminder);
+        await _scheduleWeekly(reminder, mode);
       case ReminderRecurrence.monthly:
         // Pre-schedule next 24 BS-month occurrences (2 years).
-        await _scheduleBsMonthly(reminder);
+        await _scheduleBsMonthly(reminder, mode);
       case ReminderRecurrence.yearly:
         // Pre-schedule next 5 BS-year occurrences.
-        await _scheduleBsYearly(reminder);
+        await _scheduleBsYearly(reminder, mode);
+    }
+  }
+
+  /// Returns [AndroidScheduleMode.alarmClock] when exact alarms are permitted,
+  /// otherwise [AndroidScheduleMode.inexactAllowWhileIdle] as a safe fallback.
+  Future<AndroidScheduleMode> _resolveScheduleMode() async {
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      final canExact = await android?.canScheduleExactNotifications() ?? false;
+      return canExact
+          ? AndroidScheduleMode.alarmClock
+          : AndroidScheduleMode.inexactAllowWhileIdle;
+    } catch (_) {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
     }
   }
 
@@ -104,42 +135,40 @@ class NotificationService {
   // ─── Scheduling helpers ───────────────────────────────────────────
 
   /// Schedules a single notification for the given BS date.
-  Future<void> _scheduleOnce(
-      Reminder reminder, int bsY, int bsM, int bsD, int slotIndex) async {
-    final adDateTime = _resolveAdDateTime(reminder, bsY, bsM, bsD);
-    if (adDateTime == null) return;
-    if (adDateTime.isBefore(DateTime.now())) return;
+  Future<void> _scheduleOnce(Reminder reminder, int bsY, int bsM, int bsD,
+      int slotIndex, AndroidScheduleMode mode) async {
+    final tzDt = _resolveAdDateTime(reminder, bsY, bsM, bsD);
+    if (tzDt == null) return;
+    if (tzDt.isBefore(tz.TZDateTime.now(tz.local))) return;
 
-    final tzDt = tz.TZDateTime.from(adDateTime, tz.local);
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id) + slotIndex,
-      reminder.title,
-      reminder.description.isEmpty ? null : reminder.description,
+      _notifTitle,
+      _notifBody(reminder),
       tzDt,
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.alarmClock,
+      androidScheduleMode: mode,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
   /// Daily repeat using the built-in DateTimeComponents.time match.
-  Future<void> _scheduleDaily(Reminder reminder) async {
-    final adDateTime = _resolveAdDateTime(
+  Future<void> _scheduleDaily(Reminder reminder, AndroidScheduleMode mode) async {
+    var tzDt = _resolveAdDateTime(
         reminder, reminder.bsYear, reminder.bsMonth, reminder.bsDay);
-    if (adDateTime == null) return;
+    if (tzDt == null) return;
 
-    var dt = adDateTime.isBefore(DateTime.now())
-        ? adDateTime.add(const Duration(days: 1))
-        : adDateTime;
+    final now = tz.TZDateTime.now(tz.local);
+    if (tzDt.isBefore(now)) tzDt = tzDt.add(const Duration(days: 1));
 
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id),
-      reminder.title,
-      reminder.description.isEmpty ? null : reminder.description,
-      tz.TZDateTime.from(dt, tz.local),
+      _notifTitle,
+      _notifBody(reminder),
+      tzDt,
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.alarmClock,
+      androidScheduleMode: mode,
       matchDateTimeComponents: DateTimeComponents.time,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -147,22 +176,21 @@ class NotificationService {
   }
 
   /// Weekly repeat using the built-in dayOfWeekAndTime match.
-  Future<void> _scheduleWeekly(Reminder reminder) async {
-    final adDateTime = _resolveAdDateTime(
+  Future<void> _scheduleWeekly(Reminder reminder, AndroidScheduleMode mode) async {
+    var tzDt = _resolveAdDateTime(
         reminder, reminder.bsYear, reminder.bsMonth, reminder.bsDay);
-    if (adDateTime == null) return;
+    if (tzDt == null) return;
 
-    var dt = adDateTime.isBefore(DateTime.now())
-        ? adDateTime.add(const Duration(days: 7))
-        : adDateTime;
+    final now = tz.TZDateTime.now(tz.local);
+    if (tzDt.isBefore(now)) tzDt = tzDt.add(const Duration(days: 7));
 
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id),
-      reminder.title,
-      reminder.description.isEmpty ? null : reminder.description,
-      tz.TZDateTime.from(dt, tz.local),
+      _notifTitle,
+      _notifBody(reminder),
+      tzDt,
       _buildDetails(reminder.category),
-      androidScheduleMode: AndroidScheduleMode.alarmClock,
+      androidScheduleMode: mode,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -172,7 +200,7 @@ class NotificationService {
   /// BS-aware monthly: schedule up to 24 future occurrences individually.
   /// Each occurrence is converted from BS → AD independently, so variable
   /// month lengths (29–32 days) are handled correctly.
-  Future<void> _scheduleBsMonthly(Reminder reminder) async {
+  Future<void> _scheduleBsMonthly(Reminder reminder, AndroidScheduleMode mode) async {
     int bsY = reminder.bsYear;
     int bsM = reminder.bsMonth;
 
@@ -180,7 +208,7 @@ class NotificationService {
       // Clamp day to the actual length of this BS month.
       final maxDays = _safeTotalDays(bsY, bsM);
       final bsD = reminder.bsDay.clamp(1, maxDays);
-      await _scheduleOnce(reminder, bsY, bsM, bsD, i);
+      await _scheduleOnce(reminder, bsY, bsM, bsD, i, mode);
 
       bsM++;
       if (bsM > 12) {
@@ -191,12 +219,12 @@ class NotificationService {
   }
 
   /// BS-aware yearly: schedule up to 5 future occurrences individually.
-  Future<void> _scheduleBsYearly(Reminder reminder) async {
+  Future<void> _scheduleBsYearly(Reminder reminder, AndroidScheduleMode mode) async {
     for (int i = 0; i < 5; i++) {
       final bsY = reminder.bsYear + i;
       final maxDays = _safeTotalDays(bsY, reminder.bsMonth);
       final bsD = reminder.bsDay.clamp(1, maxDays);
-      await _scheduleOnce(reminder, bsY, reminder.bsMonth, bsD, i);
+      await _scheduleOnce(reminder, bsY, reminder.bsMonth, bsD, i, mode);
     }
   }
 
@@ -204,19 +232,26 @@ class NotificationService {
 
   /// Converts the BS date + time to AD DateTime and applies the alert offset.
   /// Returns null if the BS date is invalid.
-  DateTime? _resolveAdDateTime(
+  ///
+  /// The resulting TZDateTime is always in Asia/Kathmandu regardless of the
+  /// device's system timezone (important for emulators set to UTC).
+  tz.TZDateTime? _resolveAdDateTime(
       Reminder reminder, int bsY, int bsM, int bsD) {
     try {
       final adBase = NepaliDateTime(bsY, bsM, bsD).toDateTime();
-      var dt = DateTime(
-          adBase.year, adBase.month, adBase.day, reminder.hour, reminder.minute);
+      final kathmandu = tz.getLocation('Asia/Kathmandu');
+      // Build the scheduled moment directly in NPT so the device timezone
+      // does not affect the result.
+      final dt = tz.TZDateTime(
+          kathmandu, adBase.year, adBase.month, adBase.day,
+          reminder.hour, reminder.minute);
       return _applyOffset(dt, reminder.alertOffset);
     } catch (_) {
       return null;
     }
   }
 
-  DateTime _applyOffset(DateTime dt, AlertOffset offset) {
+  tz.TZDateTime _applyOffset(tz.TZDateTime dt, AlertOffset offset) {
     switch (offset) {
       case AlertOffset.fifteenMin:
         return dt.subtract(const Duration(minutes: 15));
@@ -250,7 +285,7 @@ class NotificationService {
         channelDescription: _channelDesc,
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: 'ic_notification',
       ),
       iOS: const DarwinNotificationDetails(
         presentAlert: true,
