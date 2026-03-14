@@ -27,8 +27,12 @@ void main() async {
   }
   // Initialise local notifications and request runtime permissions (mobile only).
   if (!kIsWeb) {
-    await NotificationService.instance.init();
-    await NotificationService.instance.requestPermissions();
+    try {
+      await NotificationService.instance.init();
+      await NotificationService.instance.requestPermissions();
+    } catch (e) {
+      debugPrint('NotificationService init failed: $e');
+    }
   }
   runApp(const ProviderScope(child: BabaalPatroApp()));
 }
