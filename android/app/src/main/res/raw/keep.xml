@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Prevent resource shrinking from removing drawables referenced only by
+     string name in Dart code (flutter_local_notifications icon). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />

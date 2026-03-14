@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nepali_utils/nepali_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -29,11 +30,18 @@ class NotificationService {
   static const _channelId = 'babaal_patro_reminders';
   static const _channelName = 'स्मरणहरू';
   static const _channelDesc = 'बबाल पात्रो – स्मरण सूचनाहरू';
-  static const _notifTitle = 'You have a reminder';
+
+  /// Reads the persisted language preference and returns the appropriate title.
+  /// Falls back to Nepali (the app default) if the preference is not set.
+  Future<String> _localizedTitle() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isNepali = prefs.getBool('is_nepali') ?? true;
+    return isNepali ? 'तपाईंको एउटा रिमाइन्डर छ!' : 'You have a reminder';
+  }
 
   String _notifBody(Reminder reminder) => reminder.description.isEmpty
-      ? reminder.title
-      : '${reminder.title}\n${reminder.description}';
+      ? '➤ ${reminder.title}'
+      : '➤ ${reminder.title}\n${reminder.description}';
 
   Future<void> init() async {
     if (_initialized) return;
@@ -88,22 +96,23 @@ class NotificationService {
     // Fall back to inexactAllowWhileIdle when exact alarms are unavailable so
     // notifications still fire (possibly a few minutes late).
     final mode = await _resolveScheduleMode();
+    final title = await _localizedTitle();
 
     switch (reminder.recurrence) {
       case ReminderRecurrence.none:
       case ReminderRecurrence.once:
         await _scheduleOnce(reminder, reminder.bsYear, reminder.bsMonth,
-            reminder.bsDay, 0, mode);
+            reminder.bsDay, 0, mode, title);
       case ReminderRecurrence.daily:
-        await _scheduleDaily(reminder, mode);
+        await _scheduleDaily(reminder, mode, title);
       case ReminderRecurrence.weekly:
-        await _scheduleWeekly(reminder, mode);
+        await _scheduleWeekly(reminder, mode, title);
       case ReminderRecurrence.monthly:
         // Pre-schedule next 24 BS-month occurrences (2 years).
-        await _scheduleBsMonthly(reminder, mode);
+        await _scheduleBsMonthly(reminder, mode, title);
       case ReminderRecurrence.yearly:
         // Pre-schedule next 5 BS-year occurrences.
-        await _scheduleBsYearly(reminder, mode);
+        await _scheduleBsYearly(reminder, mode, title);
     }
   }
 
@@ -136,14 +145,14 @@ class NotificationService {
 
   /// Schedules a single notification for the given BS date.
   Future<void> _scheduleOnce(Reminder reminder, int bsY, int bsM, int bsD,
-      int slotIndex, AndroidScheduleMode mode) async {
+      int slotIndex, AndroidScheduleMode mode, String title) async {
     final tzDt = _resolveAdDateTime(reminder, bsY, bsM, bsD);
     if (tzDt == null) return;
     if (tzDt.isBefore(tz.TZDateTime.now(tz.local))) return;
 
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id) + slotIndex,
-      _notifTitle,
+      title,
       _notifBody(reminder),
       tzDt,
       _buildDetails(reminder.category),
@@ -154,7 +163,7 @@ class NotificationService {
   }
 
   /// Daily repeat using the built-in DateTimeComponents.time match.
-  Future<void> _scheduleDaily(Reminder reminder, AndroidScheduleMode mode) async {
+  Future<void> _scheduleDaily(Reminder reminder, AndroidScheduleMode mode, String title) async {
     var tzDt = _resolveAdDateTime(
         reminder, reminder.bsYear, reminder.bsMonth, reminder.bsDay);
     if (tzDt == null) return;
@@ -164,7 +173,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id),
-      _notifTitle,
+      title,
       _notifBody(reminder),
       tzDt,
       _buildDetails(reminder.category),
@@ -176,7 +185,7 @@ class NotificationService {
   }
 
   /// Weekly repeat using the built-in dayOfWeekAndTime match.
-  Future<void> _scheduleWeekly(Reminder reminder, AndroidScheduleMode mode) async {
+  Future<void> _scheduleWeekly(Reminder reminder, AndroidScheduleMode mode, String title) async {
     var tzDt = _resolveAdDateTime(
         reminder, reminder.bsYear, reminder.bsMonth, reminder.bsDay);
     if (tzDt == null) return;
@@ -186,7 +195,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _baseNotifId(reminder.id),
-      _notifTitle,
+      title,
       _notifBody(reminder),
       tzDt,
       _buildDetails(reminder.category),
@@ -200,7 +209,7 @@ class NotificationService {
   /// BS-aware monthly: schedule up to 24 future occurrences individually.
   /// Each occurrence is converted from BS → AD independently, so variable
   /// month lengths (29–32 days) are handled correctly.
-  Future<void> _scheduleBsMonthly(Reminder reminder, AndroidScheduleMode mode) async {
+  Future<void> _scheduleBsMonthly(Reminder reminder, AndroidScheduleMode mode, String title) async {
     int bsY = reminder.bsYear;
     int bsM = reminder.bsMonth;
 
@@ -208,7 +217,7 @@ class NotificationService {
       // Clamp day to the actual length of this BS month.
       final maxDays = _safeTotalDays(bsY, bsM);
       final bsD = reminder.bsDay.clamp(1, maxDays);
-      await _scheduleOnce(reminder, bsY, bsM, bsD, i, mode);
+      await _scheduleOnce(reminder, bsY, bsM, bsD, i, mode, title);
 
       bsM++;
       if (bsM > 12) {
@@ -219,12 +228,12 @@ class NotificationService {
   }
 
   /// BS-aware yearly: schedule up to 5 future occurrences individually.
-  Future<void> _scheduleBsYearly(Reminder reminder, AndroidScheduleMode mode) async {
+  Future<void> _scheduleBsYearly(Reminder reminder, AndroidScheduleMode mode, String title) async {
     for (int i = 0; i < 5; i++) {
       final bsY = reminder.bsYear + i;
       final maxDays = _safeTotalDays(bsY, reminder.bsMonth);
       final bsD = reminder.bsDay.clamp(1, maxDays);
-      await _scheduleOnce(reminder, bsY, reminder.bsMonth, bsD, i, mode);
+      await _scheduleOnce(reminder, bsY, reminder.bsMonth, bsD, i, mode, title);
     }
   }
 
