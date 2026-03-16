@@ -21,28 +21,44 @@ class CalendarGrid extends ConsumerWidget {
     final state = ref.watch(calendarProvider);
     final notifier = ref.read(calendarProvider.notifier);
     final gridDays = state.gridDays;
-    final holidays =
-        CalendarDataService.holidaysInMonth(state.year, state.month);
-    final eventDays = ref.watch(remindersProvider)
+    final holidays = CalendarDataService.holidaysInMonth(
+      state.year,
+      state.month,
+    );
+    final eventDays = ref
+        .watch(remindersProvider)
         .where((r) => r.bsYear == state.year && r.bsMonth == state.month)
         .map((r) => r.bsDay)
         .toSet();
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
-    final showBorder = ref.watch(settingsProvider.select((s) => s.showGridBorder));
+    final showBorder = ref.watch(
+      settingsProvider.select((s) => s.showGridBorder),
+    );
     final isNepali = ref.watch(languageProvider);
     final s = S.of(isNepali);
 
-    final leadingDays =
-        NepaliDateHelper.previousMonthTrailingDays(state.year, state.month);
-    final trailingCount =
-        NepaliDateHelper.trailingBlanks(state.year, state.month);
+    final leadingDays = NepaliDateHelper.previousMonthTrailingDays(
+      state.year,
+      state.month,
+    );
+    final trailingCount = NepaliDateHelper.trailingBlanks(
+      state.year,
+      state.month,
+    );
     final totalCells = gridDays.length + trailingCount;
 
     // Pre-compute AD day numbers for all days in the month to avoid
     // creating NepaliDateTime objects per cell during build.
     final daysInMonth = NepaliDateHelper.daysInMonth(state.year, state.month);
-    final adDays = List<int>.generate(daysInMonth, (i) =>
-        NepaliDateHelper.toADDay(state.year, state.month, i + 1));
+    final adDays = List<int>.generate(
+      daysInMonth,
+      (i) => NepaliDateHelper.toADDay(state.year, state.month, i + 1),
+    );
+
+    final isTablet = MediaQuery.sizeOf(context).width >= 600;
+    final dateFontSize = isTablet ? 28.0 : 18.0;
+    final fadedDateFontSize = isTablet ? 26.0 : 14.0;
+    final adDayFontSize = isTablet ? 14.0 : 10.0;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -70,7 +86,7 @@ class CalendarGrid extends ConsumerWidget {
               child: Text(
                 NepaliDateHelper.toNepaliNumeral(leadingDays[index]),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: fadedDateFontSize,
                   color: colors.textSecondary.withValues(alpha: 0.3),
                 ),
               ),
@@ -95,7 +111,7 @@ class CalendarGrid extends ConsumerWidget {
               child: Text(
                 NepaliDateHelper.toNepaliNumeral(trailingDay),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: fadedDateFontSize,
                   color: colors.textSecondary.withValues(alpha: 0.3),
                 ),
               ),
@@ -142,8 +158,8 @@ class CalendarGrid extends ConsumerWidget {
               color: isSelected
                   ? AppTheme.accent
                   : isToday
-                      ? AppTheme.todayHighlight.withValues(alpha: 0.25)
-                      : Colors.transparent,
+                  ? AppTheme.todayHighlight.withValues(alpha: 0.25)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -159,8 +175,7 @@ class CalendarGrid extends ConsumerWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: isToday && !isSelected
-                        ? Border.all(
-                            color: AppTheme.todayHighlight, width: 1.5)
+                        ? Border.all(color: AppTheme.todayHighlight, width: 1.5)
                         : null,
                   ),
                   child: Stack(
@@ -173,17 +188,17 @@ class CalendarGrid extends ConsumerWidget {
                             Text(
                               NepaliDateHelper.toNepaliNumeral(day),
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: dateFontSize,
                                 fontWeight: isToday || isSelected
                                     ? FontWeight.w700
                                     : FontWeight.w400,
                                 color: isSelected
                                     ? Colors.white
                                     : isToday
-                                        ? AppTheme.todayHighlight
-                                        : (isSaturday || isHoliday)
-                                            ? AppTheme.saturday
-                                            : colors.textPrimary,
+                                    ? AppTheme.todayHighlight
+                                    : (isSaturday || isHoliday)
+                                    ? AppTheme.saturday
+                                    : colors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -195,7 +210,8 @@ class CalendarGrid extends ConsumerWidget {
                                     width: 5,
                                     height: 5,
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 1),
+                                      horizontal: 1,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? Colors.white
@@ -208,7 +224,8 @@ class CalendarGrid extends ConsumerWidget {
                                     width: 5,
                                     height: 5,
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 1),
+                                      horizontal: 1,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? Colors.white
@@ -230,11 +247,10 @@ class CalendarGrid extends ConsumerWidget {
                         child: Text(
                           adDays[day - 1].toString(),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: adDayFontSize,
                             color: isSelected
                                 ? Colors.white70
-                                : colors.textSecondary
-                                    .withValues(alpha: 0.7),
+                                : colors.textSecondary.withValues(alpha: 0.7),
                           ),
                         ),
                       ),

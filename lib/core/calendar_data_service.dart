@@ -12,6 +12,7 @@ class CalendarDataService {
 
   // Key: "year-month-day" (BS)
   static final Map<String, String> _holidays = {};
+  static final Map<String, List<String>> _events = {};
   static final Map<String, List<String>> _panchangam = {};
   static final Map<String, String> _tithi = {};
   static bool _initialized = false;
@@ -50,11 +51,14 @@ class CalendarDataService {
           _tithi[key] = tithiRaw;
         }
 
-        // Public holidays only
-        if (value['is_public_holiday'] == true) {
-          final eventsRaw = value['events'];
-          if (eventsRaw is List && eventsRaw.isNotEmpty) {
-            _holidays[key] = List<String>.from(eventsRaw).join(' · ');
+        // Events
+        final eventsRaw = value['events'];
+        if (eventsRaw is List && eventsRaw.isNotEmpty) {
+          final eventsList = List<String>.from(eventsRaw);
+          if (value['is_public_holiday'] == true) {
+            _holidays[key] = eventsList.join(' · ');
+          } else {
+            _events[key] = eventsList;
           }
         }
       }
@@ -84,6 +88,10 @@ class CalendarDataService {
     }
     return result;
   }
+
+  /// Returns non-holiday events for a BS date, or empty list if none.
+  static List<String> getEvents(int year, int month, int day) =>
+      _events['$year-$month-$day'] ?? const [];
 
   /// Returns the panchangam items for a BS date, or empty list if unavailable.
   static List<String> getPanchangam(int year, int month, int day) =>
