@@ -185,6 +185,7 @@ class S {
 
   // ─── Date Detail Card ─────────────────────────────────────────────
   String get panchangam => isNepali ? 'पञ्चाङ्ग' : 'Panchang';
+  String get events => isNepali ? 'विशेष दिन' : 'Events';
 
   // ─── Monthly Holidays ─────────────────────────────────────────────
   String holidaysOf(String monthName) =>

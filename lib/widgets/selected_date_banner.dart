@@ -37,6 +37,8 @@ class SelectedDateBanner extends ConsumerWidget {
 
     final holiday =
         CalendarDataService.getHoliday(selected.year, selected.month, selected.day);
+    final events =
+        CalendarDataService.getEvents(selected.year, selected.month, selected.day);
     final tithi =
         CalendarDataService.getTithi(selected.year, selected.month, selected.day);
     final panchangam =
@@ -138,6 +140,49 @@ class SelectedDateBanner extends ConsumerWidget {
                     color: AppTheme.todayHighlight,
                     fontWeight: FontWeight.w600,
                   ),
+                ),
+              ),
+            ],
+
+            // ── Non-holiday events ───────────────────────────────────
+            if (events.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: AppTheme.accent.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.events,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.accent.withValues(alpha: 0.7),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ...events.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
