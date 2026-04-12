@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/Flutter-3.11+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
   <img src="https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart&logoColor=white" alt="Dart" />
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green" alt="Platform" />
+  <img src="https://img.shields.io/badge/Vibe%20Coded-Claude%20Code-cc785c?logo=anthropic&logoColor=white" alt="Vibe Coded with Claude Code" />
   <img src="https://img.shields.io/github/license/rajsth/babaal-patro" alt="License" />
   <a href="https://github.com/rajsth/babaal-patro/releases/latest"><img src="https://img.shields.io/github/v/release/rajsth/babaal-patro" alt="Release" /></a>
 </p>
@@ -143,6 +144,10 @@ Notifications are scheduled using `flutter_local_notifications` with `zonedSched
 - **Yearly (BS)** — pre-schedules 5 individual AD-converted occurrences
 
 Each occurrence is converted from BS → AD independently using `nepali_utils`, so months with 29, 30, 31, or 32 days are all handled correctly without fixed-interval approximations.
+
+## Built with Claude Code
+
+This project is fully vibe coded using [Claude Code](https://claude.ai/claude-code) — from UI design to business logic, notifications, widgets, and even this README.
 
 ## License
 
