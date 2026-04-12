@@ -20,9 +20,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
   late TabController _tabController;
 
   // AD → BS
-  int _adYear = DateTime.now().year;
-  int _adMonth = DateTime.now().month;
-  int _adDay = DateTime.now().day;
+  int _adYear = NepaliDateHelper.nepalNow().year;
+  int _adMonth = NepaliDateHelper.nepalNow().month;
+  int _adDay = NepaliDateHelper.nepalNow().day;
   String? _adToBsResult;
 
   static const List<String> _adMonthNames = [
@@ -47,9 +47,9 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
   }
 
   // BS → AD
-  int _bsYear = NepaliDateTime.now().year;
-  int _bsMonth = NepaliDateTime.now().month;
-  int _bsDay = NepaliDateTime.now().day;
+  int _bsYear = NepaliDateHelper.today().year;
+  int _bsMonth = NepaliDateHelper.today().month;
+  int _bsDay = NepaliDateHelper.today().day;
   String? _bsToAdResult;
 
   @override

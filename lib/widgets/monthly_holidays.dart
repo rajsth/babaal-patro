@@ -17,7 +17,7 @@ class MonthlyHolidays extends ConsumerWidget {
   /// Negative = past, positive = future, 0 = today.
   int _dayDifference(int year, int month, int day) {
     final holidayAd = NepaliDateTime(year, month, day).toDateTime();
-    final todayAd = DateTime.now();
+    final todayAd = NepaliDateHelper.nepalNow();
     final hDate = DateTime(holidayAd.year, holidayAd.month, holidayAd.day);
     final tDate = DateTime(todayAd.year, todayAd.month, todayAd.day);
     return hDate.difference(tDate).inDays;
