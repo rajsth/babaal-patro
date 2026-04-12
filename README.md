@@ -146,4 +146,4 @@ Each occurrence is converted from BS → AD independently using `nepali_utils`, 
 
 ## License
 
-MIT
+[GPL v3](LICENSE)
