@@ -41,9 +41,13 @@
 
 ### Calendar
 - BS (Bikram Sambat) monthly grid with today highlighted and quick month/year navigation
+- Daily tithi (तिथि) and panchang (पञ्चाङ्ग) information
 - Nepali public holiday listings per month
-- Selected date banner showing AD equivalent, events, and quick reminder shortcut
-- Home screen widget showing today's BS date (Android)
+- Selected date banner showing AD equivalent, events, tithi, and panchang details
+
+### Home Screen Widget
+- Android widget showing today's Nepali date — updates automatically without opening the app
+- iOS widget via WidgetKit
 
 ### Reminders (स्मरण)
 - Create local push-notification reminders tied to BS dates
