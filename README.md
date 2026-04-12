@@ -1,6 +1,40 @@
-# बबाल पात्रो (Babaal patro)
+<p align="center">
+  <img src="assets/images/app_icon.png" width="120" alt="Babaal Patro Logo" />
+</p>
 
-A modern Nepali Calendar (Bikram Sambat) app built with Flutter. Designed for everyday use with a clean, minimal dark-first interface that feels native to Nepali users.
+<h1 align="center">बबाल पात्रो (Babaal Patro)</h1>
+
+<p align="center">
+  A modern Nepali Calendar (Bikram Sambat) app built with Flutter.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.11+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart&logoColor=white" alt="Dart" />
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green" alt="Platform" />
+  <img src="https://img.shields.io/github/license/rajsth/babaal-patro" alt="License" />
+  <a href="https://github.com/rajsth/babaal-patro/releases/latest"><img src="https://img.shields.io/github/v/release/rajsth/babaal-patro" alt="Release" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/rajsth/babaal-patro/releases/latest">Download APK</a>
+</p>
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="assets/images/screenshots/babaal-patro-0.webp" width="200" alt="Calendar" />
+  &nbsp;&nbsp;
+  <img src="assets/images/screenshots/babaal-patro-1.webp" width="200" alt="Reminders" />
+  &nbsp;&nbsp;
+  <img src="assets/images/screenshots/babaal-patro-2.webp" width="200" alt="Converter" />
+  &nbsp;&nbsp;
+  <img src="assets/images/screenshots/babaal-patro-3.webp" width="200" alt="Settings" />
+</p>
+
+---
 
 ## Features
 
@@ -60,9 +94,6 @@ flutter run
 ### Build APK
 
 ```bash
-# With Java 17
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17
-
 # Split by ABI (smaller downloads)
 flutter build apk --release --split-per-abi
 
