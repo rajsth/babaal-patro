@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/rajsth/babaal-patro/releases/latest">Download APK</a>
+  <a href="https://github.com/rajsth/babaal-patro/releases/latest">Download APK (Android)</a> · Available on iOS
 </p>
 
 ---
@@ -42,7 +42,7 @@
 - BS (Bikram Sambat) monthly grid with today highlighted and quick month/year navigation
 - Nepali public holiday listings per month
 - Selected date banner showing AD equivalent, events, and quick reminder shortcut
-- Android home screen widget showing today's BS date
+- Home screen widget showing today's BS date (Android)
 
 ### Reminders (स्मरण)
 - Create local push-notification reminders tied to BS dates
@@ -74,7 +74,7 @@
 | Timezone | timezone |
 | BS/AD Conversion | nepali_utils |
 | Persistence | shared_preferences |
-| Home Widget | Android AppWidgetProvider (Kotlin) |
+| Home Widget | Android AppWidgetProvider (Kotlin), iOS WidgetKit (Swift) |
 
 ## Getting Started
 
@@ -91,14 +91,17 @@ flutter pub get
 flutter run
 ```
 
-### Build APK
+### Build
 
 ```bash
-# Split by ABI (smaller downloads)
+# Android APK
+flutter build apk --release
+
+# Android APK split by ABI (smaller downloads)
 flutter build apk --release --split-per-abi
 
-# Single universal APK
-flutter build apk --release
+# iOS
+flutter build ios --release
 ```
 
 ## Project Structure
@@ -115,6 +118,8 @@ android/
   app/src/main/
     kotlin/       # Android home screen widget (Kotlin)
     res/          # Widget layouts, drawables
+ios/
+  NepaliDateWidget/ # iOS home screen widget (SwiftUI / WidgetKit)
 ```
 
 ## Notification Architecture
