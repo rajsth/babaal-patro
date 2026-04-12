@@ -3,6 +3,7 @@ package com.babaal.patro
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -34,16 +35,34 @@ class NepaliDateWidget : AppWidgetProvider() {
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        val action = intent.action
+        if (action == Intent.ACTION_DATE_CHANGED ||
+            action == Intent.ACTION_TIMEZONE_CHANGED ||
+            action == Intent.ACTION_TIME_CHANGED
+        ) {
+            val mgr = AppWidgetManager.getInstance(context)
+            val ids = mgr.getAppWidgetIds(ComponentName(context, NepaliDateWidget::class.java))
+            if (ids.isNotEmpty()) {
+                onUpdate(context, mgr, ids)
+            }
+        }
+    }
+
     private fun buildViews(context: Context, options: Bundle): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.nepali_date_widget)
 
-        // Read data stored by Flutter via home_widget.
-        val widgetData = HomeWidgetPlugin.getData(context)
-        val day = widgetData.getString("nepali_day", "--")
-        val monthYear = widgetData.getString("nepali_month_year", "---")
-        val dayName = widgetData.getString("nepali_day_name", "---")
-        val adDate = widgetData.getString("ad_date", "---")
+        // Compute Nepali date natively — no dependency on Flutter app.
+        val bs = NepaliCalendar.now()
+        val day = NepaliCalendar.toNepaliNumeral(bs.day)
+        val monthName = NepaliCalendar.monthNames[bs.month - 1]
+        val monthYear = "$monthName ${NepaliCalendar.toNepaliNumeral(bs.year)}"
+        val dayName = NepaliCalendar.dayFullNames[bs.weekday - 1]
+        val adDate = NepaliCalendar.formatADDate()
 
+        // Accent color is still read from Flutter's shared preferences.
+        val widgetData = HomeWidgetPlugin.getData(context)
         val accentHex = widgetData.getString("accent_color", "#FFB388FF")
         val accentColor = try { Color.parseColor(accentHex) } catch (_: Exception) { Color.parseColor("#FFB388FF") }
         val dividerColor = Color.argb(0x33, Color.red(accentColor), Color.green(accentColor), Color.blue(accentColor))
@@ -79,13 +98,13 @@ class NepaliDateWidget : AppWidgetProvider() {
         views.setTextViewTextSize(R.id.tv_nepali_month_year, TypedValue.COMPLEX_UNIT_SP, bottomTextSize)
 
         // Scale vertical padding based on height.
-        val verticalPadding = (minHeightDp * 0.12f).coerceIn(8f, 32f)
+        val verticalPadding = (minHeightDp * 0.08f).coerceIn(4f, 16f)
         val paddingPx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, verticalPadding,
             context.resources.displayMetrics
         ).toInt()
         val horizontalPaddingPx = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 20f,
+            TypedValue.COMPLEX_UNIT_DIP, 16f,
             context.resources.displayMetrics
         ).toInt()
         views.setViewPadding(R.id.widget_root, horizontalPaddingPx, paddingPx, horizontalPaddingPx, paddingPx)
