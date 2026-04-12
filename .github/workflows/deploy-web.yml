@@ -1,0 +1,47 @@
+name: Deploy Flutter Web
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout babaal-patro
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build for web
+        run: flutter build web --release --base-href="/babaal-patro/app/"
+
+      - name: Checkout rajsth.github.io
+        uses: actions/checkout@v4
+        with:
+          repository: rajsth/rajsth.github.io
+          token: ${{ secrets.DEPLOY_TOKEN }}
+          path: website
+
+      - name: Deploy to website repo
+        run: |
+          rm -rf website/babaal-patro/app
+          mkdir -p website/babaal-patro/app
+          cp -r build/web/* website/babaal-patro/app/
+          cd website
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add babaal-patro/app
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "deploy: update Babaal patro web app from ${{ github.event.release.tag_name || github.sha }}"
+          git push
