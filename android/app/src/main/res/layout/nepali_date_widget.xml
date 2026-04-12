@@ -4,11 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:gravity="center_vertical"
-    android:paddingStart="20dp"
-    android:paddingEnd="20dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="10dp">
+    android:gravity="top"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="6dp">
 
     <!-- ===== TOP: HERO TIME DISPLAY ===== -->
 
@@ -81,7 +81,7 @@
         android:layout_alignParentBottom="true"
         android:text="---"
         android:textColor="#77FFFFFF"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:includeFontPadding="false" />
 
     <!-- Nepali day name -->
@@ -90,7 +90,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
+        android:layout_alignBaseline="@id/tv_ad_date"
         android:text="---"
         android:textColor="#99FFFFFF"
         android:textSize="13sp"
@@ -102,7 +102,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
+        android:layout_alignBaseline="@id/tv_ad_date"
         android:text="---"
         android:textColor="#DDFFFFFF"
         android:textSize="13sp"
