@@ -7,9 +7,11 @@ import 'core/app_theme.dart';
 import 'core/app_localizations.dart';
 import 'core/calendar_data_service.dart';
 import 'core/home_widget_updater.dart';
+import 'providers/app_update_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/theme_provider.dart';
+import 'widgets/update_dialog.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/converter_screen.dart';
 import 'screens/events_screen.dart';
@@ -72,6 +74,16 @@ class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
   bool _showSplash = true;
 
+  Future<void> _checkForUpdate() async {
+    final notifier = ref.read(appUpdateProvider.notifier);
+    await notifier.checkForUpdate();
+    if (!mounted) return;
+    final state = ref.read(appUpdateProvider);
+    if (state.status == UpdateStatus.updateAvailable) {
+      showDialog(context: context, builder: (_) => const UpdateDialog());
+    }
+  }
+
   static const _screens = [
     CalendarScreen(),
     EventsScreen(),
@@ -83,7 +95,10 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget build(BuildContext context) {
     if (_showSplash) {
       return SplashScreen(
-        onComplete: () => setState(() => _showSplash = false),
+        onComplete: () {
+          setState(() => _showSplash = false);
+          if (!kIsWeb) _checkForUpdate();
+        },
       );
     }
 

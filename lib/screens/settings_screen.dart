@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
+import '../providers/app_update_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/update_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -197,6 +199,21 @@ class SettingsScreen extends ConsumerWidget {
             colors: colors,
             onTap: () =>
                 ref.read(settingsProvider.notifier).toggleGridBorder(),
+          ),
+          const SizedBox(height: 12),
+          // Check for updates
+          _SettingsTile(
+            icon: Icons.system_update_outlined,
+            title: s.checkForUpdates,
+            subtitle: s.checkForUpdatesSubtitle,
+            colors: colors,
+            onTap: () {
+              ref.read(appUpdateProvider.notifier).checkForUpdate(force: true);
+              showDialog(
+                context: context,
+                builder: (_) => const UpdateDialog(),
+              );
+            },
           ),
           const SizedBox(height: 12),
           // Accent color picker
