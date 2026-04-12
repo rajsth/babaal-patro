@@ -66,8 +66,14 @@ class NepaliDateHelper {
 
   // ─── Date Queries ────────────────────────────────────────────────
 
-  /// Returns today's date in BS.
-  static NepaliDateTime today() => NepaliDateTime.now();
+  /// Returns the current [DateTime] in Nepal Standard Time (UTC+5:45).
+  /// Nepal has no DST, so the offset is always fixed.
+  static DateTime nepalNow() =>
+      DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 45));
+
+  /// Returns today's date in BS, always based on Nepal Standard Time
+  /// regardless of the device's local timezone.
+  static NepaliDateTime today() => nepalNow().toNepaliDateTime();
 
   /// Returns the number of days in a given BS month/year.
   static int daysInMonth(int year, int month) {

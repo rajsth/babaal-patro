@@ -58,11 +58,11 @@ class _AddReminderSheetState extends ConsumerState<_AddReminderSheet> {
       _alertOffset = r.alertOffset;
       _showMoreOptions = true; // Expand options to show they're set
     } else {
-      final now = widget.initialDate ?? NepaliDateTime.now();
+      final now = widget.initialDate ?? NepaliDateHelper.today();
       _year = now.year;
       _month = now.month;
       _day = now.day;
-      final adNow = DateTime.now();
+      final adNow = NepaliDateHelper.nepalNow();
       // Round up to next hour for convenience.
       _hour = adNow.minute > 0 ? (adNow.hour + 1) % 24 : adNow.hour;
       _minute = 0;

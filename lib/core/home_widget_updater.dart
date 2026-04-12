@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:nepali_utils/nepali_utils.dart';
 import 'app_theme.dart';
 import 'nepali_date_helper.dart';
 
@@ -26,8 +25,8 @@ class HomeWidgetUpdater {
   static Future<void> update() async {
     await HomeWidget.setAppGroupId(_appGroupId);
 
-    final now = NepaliDateTime.now();
-    final adNow = DateTime.now();
+    final now = NepaliDateHelper.today();
+    final adNow = NepaliDateHelper.nepalNow();
 
     await HomeWidget.saveWidgetData<String>(
       'nepali_day',
