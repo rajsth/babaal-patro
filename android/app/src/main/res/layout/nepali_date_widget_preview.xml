@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="top"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="6dp">
+
+    <!-- Hours:Minutes -->
+    <TextView
+        android:id="@+id/tc_nepal_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:text="09:48"
+        android:textColor="#FFFFFFFF"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-black"
+        android:includeFontPadding="false" />
+
+    <!-- AM/PM -->
+    <TextView
+        android:id="@+id/tc_nepal_ampm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/tc_nepal_time"
+        android:layout_alignTop="@id/tc_nepal_time"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="6dp"
+        android:text="AM"
+        android:textColor="#FFB388FF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali day number -->
+    <TextView
+        android:id="@+id/tv_nepali_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:text="३०"
+        android:textColor="#FFB388FF"
+        android:textSize="42sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+    <!-- Separator line -->
+    <ImageView
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_above="@id/tv_ad_date"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/widget_accent_divider"
+        android:contentDescription="separator" />
+
+    <!-- AD date -->
+    <TextView
+        android:id="@+id/tv_ad_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:text="Apr 12, 2026"
+        android:textColor="#77FFFFFF"
+        android:textSize="13sp"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali day name -->
+    <TextView
+        android:id="@+id/tv_nepali_day_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignBaseline="@id/tv_ad_date"
+        android:text="आइतबार"
+        android:textColor="#99FFFFFF"
+        android:textSize="13sp"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali month + year -->
+    <TextView
+        android:id="@+id/tv_nepali_month_year"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@id/tv_ad_date"
+        android:text="चैत्र २०८२"
+        android:textColor="#DDFFFFFF"
+        android:textSize="13sp"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+</RelativeLayout>
