@@ -68,8 +68,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
     final isNepali = ref.read(languageProvider);
     final s = S.of(isNepali);
     try {
-      final adDate = DateTime(_adYear, _adMonth, _adDay);
-      final nepaliDate = adDate.toNepaliDateTime();
+      final nepaliDate = NepaliDateHelper.adToBS(_adYear, _adMonth, _adDay);
       setState(() {
         _adToBsResult =
             '${NepaliDateHelper.localizedNumeral(nepaliDate.day, isNepali: isNepali)} '

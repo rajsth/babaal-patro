@@ -7,7 +7,7 @@ class SettingsState {
   final bool showGridBorder;
   final int accentColorIndex;
 
-  const SettingsState({this.showGridBorder = false, this.accentColorIndex = 0});
+  const SettingsState({this.showGridBorder = true, this.accentColorIndex = 0});
 
   SettingsState copyWith({bool? showGridBorder, int? accentColorIndex}) {
     return SettingsState(
@@ -30,7 +30,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final accentIndex = prefs.getInt(_accentColorKey) ?? 0;
     AppTheme.setAccent(accentIndex);
     state = SettingsState(
-      showGridBorder: prefs.getBool(_gridBorderKey) ?? false,
+      showGridBorder: prefs.getBool(_gridBorderKey) ?? true,
       accentColorIndex: accentIndex,
     );
   }
