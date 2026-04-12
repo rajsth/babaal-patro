@@ -25,13 +25,13 @@
 ## Screenshots
 
 <p align="center">
-  <img src="assets/images/screenshots/babaal-patro-0.webp" width="200" alt="Calendar" />
+  <img src="assets/images/screenshots/babaal-patro-0.webp" width="195" alt="Calendar" />
   &nbsp;&nbsp;
-  <img src="assets/images/screenshots/babaal-patro-1.webp" width="200" alt="Reminders" />
+  <img src="assets/images/screenshots/babaal-patro-1.webp" width="195" alt="Reminders" />
   &nbsp;&nbsp;
-  <img src="assets/images/screenshots/babaal-patro-2.webp" width="200" alt="Converter" />
+  <img src="assets/images/screenshots/babaal-patro-2.webp" width="195" alt="Converter" />
   &nbsp;&nbsp;
-  <img src="assets/images/screenshots/babaal-patro-3.webp" width="200" alt="Settings" />
+  <img src="assets/images/screenshots/babaal-patro-3.webp" width="195" alt="Settings" />
 </p>
 
 ---
