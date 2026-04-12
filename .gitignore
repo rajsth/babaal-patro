@@ -74,6 +74,10 @@ app.*.map.json
 # Exceptions - keep these tracked
 !**/ios/Flutter/AppFrameworkInfo.plist
 
+# Firebase config (contains API keys)
+**/google-services.json
+**/GoogleService-Info.plist
+
 # Claude Code
 .claude/
 
