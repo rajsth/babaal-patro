@@ -84,6 +84,18 @@
 - Java 17 (`JAVA_HOME` should point to JDK 17)
 - Android Studio / Xcode
 
+### Firebase Setup
+
+This project uses Firebase for authentication and Firestore. The Firebase config files are not included in the repo for security reasons. To set up your own:
+
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Install the FlutterFire CLI: `dart pub global activate flutterfire_cli`
+3. Run `flutterfire configure` to generate:
+   - `lib/firebase_options.dart`
+   - `android/app/google-services.json`
+   - `ios/Runner/GoogleService-Info.plist`
+4. Enable **Authentication** (Google Sign-In) and **Cloud Firestore** in your Firebase console
+
 ### Run
 
 ```bash

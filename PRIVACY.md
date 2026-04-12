@@ -1,67 +1,94 @@
-## Privacy Policy ##
+# Privacy Policy
 
-This privacy policy applies to the बबाल पात्रो app (hereby referred to as "Application") for mobile devices that was created by Raj K. Shrestha (hereby referred to as "Service Provider") as a Free service. This service is intended for use "AS IS".
+**Effective date:** March 7, 2026
+**Last updated:** April 12, 2026
 
-## Information Collection and Use ##
+This privacy policy applies to the **बबाल पात्रो (Babaal Patro)** mobile application ("App") developed by Raj K. Shrestha ("Developer"). The App is provided as a free service and is intended for use "as is."
 
-The Application collects information when you download and use it. This information may include information such as
+---
 
--  Your device's Internet Protocol address (e.g. IP address) 
--  Your device's Internet Protocol address (e.g. IP address) 
-- The pages of the Application that you visit, the time and date of your visit, the time spent on those pages
--  The time spent on the Application
--  The operating system you use on your mobile device
+## 1. Information We Collect
 
-The Application does not gather precise information about the location of your mobile device.
+### Information collected automatically
+When you use the App, we may collect:
+- Device type and operating system version
+- App usage data (screens visited, time spent)
+- Crash logs and performance diagnostics
 
-The Application does not use Artificial Intelligence (AI) technologies to process your data or provide features.
+### Information you provide
+- **Google Sign-In:** If you choose to sign in, we receive your name, email address, and profile photo from Google. This is used solely for account identification and syncing preferences.
+- **Reminders:** Any reminders you create are stored locally on your device.
 
-The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.
+### Information we do NOT collect
+- Precise location data
+- Contacts, photos, or files
+- Payment or financial information
 
-For a better experience, while using the Application, the Service Provider may require you to provide us with certain personally identifiable information, including but not limited to Email, User ID. The information that the Service Provider request will be retained by them and used as described in this privacy policy.
+---
 
-## Third Party Access ##
+## 2. How We Use Your Information
 
-Only aggregated, anonymized data is periodically transmitted to external services to aid the Service Provider in improving the Application and their service. The Service Provider may share your information with third parties in the ways that are described in this privacy statement.
+We use collected information to:
+- Provide and maintain the App's functionality
+- Sync your preferences across devices (if signed in)
+- Improve app performance and fix bugs
+- Send important notices about the App (if applicable)
 
-The Service Provider may disclose User Provided and Automatically Collected Information:
+We do **not** use your data for advertising, profiling, or AI-based processing.
 
-*   as required by law, such as to comply with a subpoena, or similar legal process;
-*   when they believe in good faith that disclosure is necessary to protect their rights, protect your safety or the safety of others, investigate fraud, or respond to a government request;
-*   with their trusted services providers who work on their behalf, do not have an independent use of the information we disclose to them, and have agreed to adhere to the rules set forth in this privacy statement.
+---
 
-## Opt-Out Rights ##
+## 3. Third-Party Services
 
-You can stop all collection of information by the Application easily by uninstalling it. You may use the standard uninstall processes as may be available as part of your mobile device or via the mobile application marketplace or network.
+The App uses the following third-party services that may collect data according to their own privacy policies:
 
-## Data Retention Policy ##
+- [Google Firebase](https://firebase.google.com/support/privacy) — Authentication and cloud storage
+- [Google Sign-In](https://policies.google.com/privacy) — Account authentication
 
-The Service Provider will retain User Provided data for as long as you use the Application and for a reasonable time thereafter. If you'd like them to delete User Provided Data that you have provided via the Application, please contact them at rsthdn@gmail.com and they will respond in a reasonable time.
+We do not sell, trade, or share your personal information with third parties for marketing purposes.
 
-## Children ##
+---
 
-The Service Provider does not use the Application to knowingly solicit data from or market to children under the age of 13.
+## 4. Data Storage and Retention
 
-The Service Provider does not knowingly collect personally identifiable information from children. The Service Provider encourages all children to never submit any personally identifiable information through the Application and/or Services. The Service Provider encourage parents and legal guardians to monitor their children's Internet usage and to help enforce this Policy by instructing their children never to provide personally identifiable information through the Application and/or Services without their permission. If you have reason to believe that a child has provided personally identifiable information to the Service Provider through the Application and/or Services, please contact the Service Provider <span>(rsthdn@gmail.com)</span> so that they will be able to take the necessary actions. You must also be at least 16 years of age to consent to the processing of your personally identifiable information in your country (in some countries we may allow your parent or guardian to do so on your behalf).
+- **Local data** (reminders, settings) is stored on your device using SharedPreferences and is never transmitted externally.
+- **Account data** (if signed in) is stored in Firebase Cloud Firestore and retained for as long as your account is active.
+- To delete your account data, contact us at the email below and we will remove it within a reasonable timeframe.
 
-## Security ##
+---
 
-The Service Provider is concerned about safeguarding the confidentiality of your information. The Service Provider provides physical, electronic, and procedural safeguards to protect information the Service Provider processes and maintains.
+## 5. Children's Privacy
 
-## Changes ##
+The App is not directed at children under 13. We do not knowingly collect personal information from children. If you believe a child has provided us with personal data, please contact us so we can take appropriate action.
 
-This Privacy Policy may be updated from time to time for any reason. The Service Provider will notify you of any changes to the Privacy Policy by updating this page with the new Privacy Policy. You are advised to consult this Privacy Policy regularly for any changes, as continued use is deemed approval of all changes.
+---
 
-This privacy policy is effective as of 2026-03-07
+## 6. Data Security
 
-## Your Consent ##
+We implement reasonable security measures to protect your information, including encrypted data transmission and secure cloud storage through Firebase. However, no method of electronic storage is 100% secure.
 
-By using the Application, you are consenting to the processing of your information as set forth in this Privacy Policy now and as amended by us.
+---
 
-## Contact Us ##
+## 7. Your Rights
 
-If you have any questions regarding privacy while using the Application, or have questions about the practices, please contact the Service Provider via email at rsthdn@gmail.com.
+You may:
+- **Access** your data by reviewing your account information in the App
+- **Delete** your local data by clearing the App's data or uninstalling it
+- **Delete** your account data by contacting us at the email below
+- **Opt out** of data collection entirely by uninstalling the App
 
-* * *
+---
 
-This privacy policy page was generated by [App Privacy Policy Generator](https://app-privacy-policy-generator.nisrulz.com/)
+## 8. Changes to This Policy
+
+We may update this Privacy Policy from time to time. Changes will be reflected on this page with an updated "Last updated" date. Continued use of the App after changes constitutes acceptance of the revised policy.
+
+---
+
+## 9. Contact Us
+
+If you have any questions or concerns about this Privacy Policy, please contact:
+
+**Raj K. Shrestha**
+Email: developer.raj.np@gmail.com
+GitHub: [github.com/rajsth/babaal-patro](https://github.com/rajsth/babaal-patro)
