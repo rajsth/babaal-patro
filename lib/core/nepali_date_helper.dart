@@ -73,7 +73,45 @@ class NepaliDateHelper {
 
   /// Returns today's date in BS, always based on Nepal Standard Time
   /// regardless of the device's local timezone.
-  static NepaliDateTime today() => nepalNow().toNepaliDateTime();
+  ///
+  /// Uses UTC arithmetic for the day-difference calculation to avoid
+  /// a DST off-by-one bug in nepali_utils' [toNepaliDateTime()], which
+  /// uses local [DateTime] constructors internally.
+  static NepaliDateTime today() {
+    final now = nepalNow();
+    return adToBS(now.year, now.month, now.day);
+  }
+
+  /// Converts an AD date to BS using UTC [DateTime]s so that DST
+  /// offsets in the device's local timezone cannot skew [inDays].
+  /// Same algorithm as the native Android/iOS widget converters.
+  static NepaliDateTime adToBS(int adYear, int adMonth, int adDay) {
+    int bsYear = 1970;
+    int bsMonth = 1;
+    int bsDay = 1;
+
+    final ref = DateTime.utc(1913, 4, 13);
+    final target = DateTime.utc(adYear, adMonth, adDay);
+    int diff = target.difference(ref).inDays;
+
+    if (diff < 0) return NepaliDateTime(bsYear, bsMonth, bsDay);
+
+    // Advance BS year using the library's year-length data.
+    while (diff >= NepaliDateTime(bsYear).totalDaysInYear) {
+      diff -= NepaliDateTime(bsYear).totalDaysInYear;
+      bsYear++;
+    }
+
+    // Advance BS month.
+    while (bsMonth <= 12 &&
+        diff >= NepaliDateTime(bsYear, bsMonth).totalDays) {
+      diff -= NepaliDateTime(bsYear, bsMonth).totalDays;
+      bsMonth++;
+    }
+
+    bsDay += diff;
+    return NepaliDateTime(bsYear, bsMonth, bsDay);
+  }
 
   /// Returns the number of days in a given BS month/year.
   static int daysInMonth(int year, int month) {
