@@ -284,6 +284,34 @@ class S {
     }
   }
 
+  // ─── App Update ────────────────────────────────────────────────────
+  String get updateAvailable =>
+      isNepali ? 'नयाँ अपडेट उपलब्ध छ' : 'Update available';
+  String get currentVersionLabel =>
+      isNepali ? 'हालको संस्करण' : 'Current version';
+  String get newVersionLabel =>
+      isNepali ? 'नयाँ संस्करण' : 'New version';
+  String get whatsNew => isNepali ? 'के नयाँ छ?' : "What's new?";
+  String get updateNow =>
+      isNepali ? 'अपडेट गर्नुहोस्' : 'Update';
+  String get downloading => isNepali ? 'डाउनलोड हुँदैछ...' : 'Downloading...';
+  String get downloadFailed =>
+      isNepali ? 'डाउनलोड असफल भयो' : 'Download failed';
+  String get retry => isNepali ? 'पुनः प्रयास' : 'Retry';
+  String get checkForUpdates =>
+      isNepali ? 'अपडेट जाँच गर्नुहोस्' : 'Check for updates';
+  String get checkForUpdatesSubtitle => isNepali
+      ? 'GitHub बाट नयाँ संस्करण खोज्नुहोस्'
+      : 'Check GitHub for a new version';
+  String get noUpdateAvailable => isNepali
+      ? 'तपाईंसँग पछिल्लो संस्करण छ'
+      : 'You have the latest version';
+  String get upToDate => isNepali ? 'अप टु डेट!' : 'Up to date!';
+  String get installing => isNepali ? 'इन्स्टल हुँदैछ...' : 'Installing...';
+  String get checkingForUpdates =>
+      isNepali ? 'अपडेट जाँच गर्दै...' : 'Checking for updates...';
+  String get close => isNepali ? 'बन्द गर्नुहोस्' : 'Close';
+
   // ─── Accent Color Names ───────────────────────────────────────────
   List<String> get accentColorNames => isNepali
       ? const [
