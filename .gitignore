@@ -79,8 +79,8 @@ app.*.map.json
 **/GoogleService-Info.plist
 firebase.json
 
-# Claude Code
-.claude/
+# Claude Code (keep agents/ tracked, ignore local settings)
+.claude/settings.local.json
 
 # Personal dev notes
 instruction.txt
