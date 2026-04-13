@@ -24,6 +24,9 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
 
   static const _storageKey = 'reminders_v1';
 
+  NotificationService get _notifications => _ref.read(notificationServiceProvider);
+  FirestoreService get _firestore => _ref.read(firestoreServiceProvider);
+
   // ── Local persistence ──────────────────────────────────────────────────────
 
   Future<void> _load() async {
@@ -64,14 +67,14 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
   /// - Both exist → cloud wins (last synced from another device)
   Future<void> _syncWithFirestore(String uid) async {
     try {
-      final cloudReminders = await FirestoreService.instance.fetchReminders(uid);
+      final cloudReminders = await _firestore.fetchReminders(uid);
       final localById = {for (final r in state) r.id: r};
       final cloudById = {for (final r in cloudReminders) r.id: r};
 
       // Upload local-only reminders to cloud
       final localOnly = localById.keys.where((id) => !cloudById.containsKey(id));
       for (final id in localOnly) {
-        await FirestoreService.instance.upsertReminder(uid, localById[id]!);
+        await _firestore.upsertReminder(uid, localById[id]!);
       }
 
       // Merge: cloud wins for conflicts, union for unique items
@@ -83,7 +86,7 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
       for (final id in cloudById.keys.where((id) => !localById.containsKey(id))) {
         final r = cloudById[id]!;
         if (r.isEnabled) {
-          await NotificationService.instance.scheduleReminder(r);
+          await _notifications.scheduleReminder(r);
         }
       }
     } catch (_) {
@@ -96,10 +99,10 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
   Future<void> addReminder(Reminder reminder) async {
     state = [...state, reminder];
     await _persist();
-    await NotificationService.instance.scheduleReminder(reminder);
+    await _notifications.scheduleReminder(reminder);
     final uid = _ref.read(authProvider)?.uid;
     if (uid != null) {
-      await FirestoreService.instance.upsertReminder(uid, reminder);
+      await _firestore.upsertReminder(uid, reminder);
     }
   }
 
@@ -110,13 +113,13 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
     ];
     await _persist();
     if (reminder.isEnabled) {
-      await NotificationService.instance.scheduleReminder(reminder);
+      await _notifications.scheduleReminder(reminder);
     } else {
-      await NotificationService.instance.cancelReminder(reminder.id);
+      await _notifications.cancelReminder(reminder.id);
     }
     final uid = _ref.read(authProvider)?.uid;
     if (uid != null) {
-      await FirestoreService.instance.upsertReminder(uid, reminder);
+      await _firestore.upsertReminder(uid, reminder);
     }
   }
 
@@ -124,11 +127,11 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
     state = state.where((r) => r.id != id).toList();
     await _persist();
     try {
-      await NotificationService.instance.cancelReminder(id);
+      await _notifications.cancelReminder(id);
     } catch (_) {}
     final uid = _ref.read(authProvider)?.uid;
     if (uid != null) {
-      await FirestoreService.instance.deleteReminder(uid, id);
+      await _firestore.deleteReminder(uid, id);
     }
   }
 
@@ -140,13 +143,13 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
     await _persist();
     final updated = state.firstWhere((r) => r.id == id);
     if (updated.isEnabled) {
-      await NotificationService.instance.scheduleReminder(updated);
+      await _notifications.scheduleReminder(updated);
     } else {
-      await NotificationService.instance.cancelReminder(id);
+      await _notifications.cancelReminder(id);
     }
     final uid = _ref.read(authProvider)?.uid;
     if (uid != null) {
-      await FirestoreService.instance.upsertReminder(uid, updated);
+      await _firestore.upsertReminder(uid, updated);
     }
   }
 }

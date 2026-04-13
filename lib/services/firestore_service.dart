@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/reminder.dart';
 
 class FirestoreService {
-  FirestoreService._();
-  static final instance = FirestoreService._();
-
   CollectionReference<Map<String, dynamic>> _remindersRef(String uid) =>
       FirebaseFirestore.instance
           .collection('users')
@@ -41,3 +39,9 @@ class FirestoreService {
     await batch.commit();
   }
 }
+
+/// Riverpod provider for [FirestoreService].
+/// Overridden in main() with a pre-initialized instance.
+final firestoreServiceProvider = Provider<FirestoreService>((ref) {
+  return FirestoreService();
+});

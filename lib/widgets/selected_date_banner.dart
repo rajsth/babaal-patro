@@ -35,14 +35,15 @@ class SelectedDateBanner extends ConsumerWidget {
     final adDate = NepaliDateHelper.toADString(
         selected.year, selected.month, selected.day);
 
+    final calendarData = ref.watch(calendarDataProvider);
     final holiday =
-        CalendarDataService.getHoliday(selected.year, selected.month, selected.day);
+        calendarData.getHoliday(selected.year, selected.month, selected.day);
     final events =
-        CalendarDataService.getEvents(selected.year, selected.month, selected.day);
+        calendarData.getEvents(selected.year, selected.month, selected.day);
     final tithi =
-        CalendarDataService.getTithi(selected.year, selected.month, selected.day);
+        calendarData.getTithi(selected.year, selected.month, selected.day);
     final panchangam =
-        CalendarDataService.getPanchangam(selected.year, selected.month, selected.day);
+        calendarData.getPanchangam(selected.year, selected.month, selected.day);
 
     // Filter reminders for the selected BS date.
     final reminders = ref.watch(remindersProvider).where((r) =>

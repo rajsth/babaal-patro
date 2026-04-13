@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nepali_utils/nepali_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -7,7 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/reminder.dart';
 
-/// Singleton service that owns all flutter_local_notifications interactions.
+/// Service that owns all flutter_local_notifications interactions.
 ///
 /// BS → AD Conversion rule:
 ///   Native schedulers only understand Gregorian DateTime. Every schedule call
@@ -20,10 +21,6 @@ import '../models/reminder.dart';
 ///   24 individual occurrences (monthly) or 5 (yearly), each converted
 ///   independently from BS → AD, correctly handling variable month lengths.
 class NotificationService {
-  NotificationService._();
-
-  static final instance = NotificationService._();
-
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
@@ -304,3 +301,11 @@ class NotificationService {
     );
   }
 }
+
+/// Riverpod provider for [NotificationService].
+/// Overridden in main() with a pre-initialized instance.
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  throw UnimplementedError(
+    'notificationServiceProvider must be overridden with an initialized instance',
+  );
+});

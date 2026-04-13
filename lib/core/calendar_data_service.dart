@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Loads calendar data from the bundled JSON files (artifact-YYYY.json).
 /// Indexes public holidays, panchangam, and tithi keyed by BS date.
@@ -8,16 +9,14 @@ import 'package:flutter/services.dart';
 /// To add a new year, add the file to pubspec.yaml assets — no code changes
 /// required. All `assets/data/artifact-*.json` files are discovered automatically.
 class CalendarDataService {
-  CalendarDataService._();
-
   // Key: "year-month-day" (BS)
-  static final Map<String, String> _holidays = {};
-  static final Map<String, List<String>> _events = {};
-  static final Map<String, List<String>> _panchangam = {};
-  static final Map<String, String> _tithi = {};
-  static bool _initialized = false;
+  final Map<String, String> _holidays = {};
+  final Map<String, List<String>> _events = {};
+  final Map<String, List<String>> _panchangam = {};
+  final Map<String, String> _tithi = {};
+  bool _initialized = false;
 
-  static Future<void> initialize() async {
+  Future<void> initialize() async {
     if (_initialized) return;
 
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
@@ -68,15 +67,15 @@ class CalendarDataService {
   }
 
   /// Returns the holiday name(s) for a BS date, or null if not a public holiday.
-  static String? getHoliday(int year, int month, int day) =>
+  String? getHoliday(int year, int month, int day) =>
       _holidays['$year-$month-$day'];
 
   /// Returns true if the given BS date is a public holiday.
-  static bool isHoliday(int year, int month, int day) =>
+  bool isHoliday(int year, int month, int day) =>
       _holidays.containsKey('$year-$month-$day');
 
   /// Returns all public holidays in a given BS month as {day: name}.
-  static Map<int, String> holidaysInMonth(int year, int month) {
+  Map<int, String> holidaysInMonth(int year, int month) {
     final result = <int, String>{};
     for (final entry in _holidays.entries) {
       final parts = entry.key.split('-');
@@ -90,14 +89,22 @@ class CalendarDataService {
   }
 
   /// Returns non-holiday events for a BS date, or empty list if none.
-  static List<String> getEvents(int year, int month, int day) =>
+  List<String> getEvents(int year, int month, int day) =>
       _events['$year-$month-$day'] ?? const [];
 
   /// Returns the panchangam items for a BS date, or empty list if unavailable.
-  static List<String> getPanchangam(int year, int month, int day) =>
+  List<String> getPanchangam(int year, int month, int day) =>
       _panchangam['$year-$month-$day'] ?? const [];
 
   /// Returns the tithi for a BS date, or null if unavailable.
-  static String? getTithi(int year, int month, int day) =>
+  String? getTithi(int year, int month, int day) =>
       _tithi['$year-$month-$day'];
 }
+
+/// Riverpod provider for [CalendarDataService].
+/// Overridden in main() with a pre-initialized instance.
+final calendarDataProvider = Provider<CalendarDataService>((ref) {
+  throw UnimplementedError(
+    'calendarDataProvider must be overridden with an initialized instance',
+  );
+});

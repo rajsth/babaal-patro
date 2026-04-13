@@ -22,21 +22,33 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await CalendarDataService.initialize();
+
+  final calendarData = CalendarDataService();
+  await calendarData.initialize();
+
   // Push today's date to the home screen widget (Android + iOS).
   if (!kIsWeb) {
     HomeWidgetUpdater.update();
   }
+
   // Initialise local notifications and request runtime permissions (mobile only).
+  final notificationService = NotificationService();
   if (!kIsWeb) {
     try {
-      await NotificationService.instance.init();
-      await NotificationService.instance.requestPermissions();
+      await notificationService.init();
+      await notificationService.requestPermissions();
     } catch (e) {
       debugPrint('NotificationService init failed: $e');
     }
   }
-  runApp(const ProviderScope(child: BabaalPatroApp()));
+
+  runApp(ProviderScope(
+    overrides: [
+      calendarDataProvider.overrideWithValue(calendarData),
+      notificationServiceProvider.overrideWithValue(notificationService),
+    ],
+    child: const BabaalPatroApp(),
+  ));
 }
 
 /// Root widget — applies the persisted theme and sets up bottom navigation.

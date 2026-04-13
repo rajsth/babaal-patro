@@ -21,7 +21,7 @@ class CalendarGrid extends ConsumerWidget {
     final state = ref.watch(calendarProvider);
     final notifier = ref.read(calendarProvider.notifier);
     final gridDays = state.gridDays;
-    final holidays = CalendarDataService.holidaysInMonth(
+    final holidays = ref.watch(calendarDataProvider).holidaysInMonth(
       state.year,
       state.month,
     );

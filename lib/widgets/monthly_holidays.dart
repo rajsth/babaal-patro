@@ -45,7 +45,7 @@ class MonthlyHolidays extends ConsumerWidget {
     // Only rebuild when year or month changes, not on date selection.
     final year = ref.watch(calendarProvider.select((s) => s.year));
     final month = ref.watch(calendarProvider.select((s) => s.month));
-    final holidays = CalendarDataService.holidaysInMonth(year, month);
+    final holidays = ref.watch(calendarDataProvider).holidaysInMonth(year, month);
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
     final isNepali = ref.watch(languageProvider);
     final s = S.of(isNepali);
