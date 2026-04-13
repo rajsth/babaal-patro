@@ -124,7 +124,7 @@ class CalendarGrid extends ConsumerWidget {
 
         final isToday = state.isToday(day);
         final isSelected = state.isSelected(day);
-        final isSaturday = index % 7 == 6;
+        final isWeekend = index % 7 == 0 || index % 7 == 6;
         final isHoliday = holidays.containsKey(day);
         final hasEvent = eventDays.contains(day);
         final holidayName = holidays[day];
@@ -196,7 +196,7 @@ class CalendarGrid extends ConsumerWidget {
                                     ? Colors.white
                                     : isToday
                                     ? AppTheme.todayHighlight
-                                    : (isSaturday || isHoliday)
+                                    : (isWeekend || isHoliday)
                                     ? AppTheme.saturday
                                     : colors.textPrimary,
                               ),

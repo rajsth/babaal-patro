@@ -5,7 +5,7 @@ import '../core/app_localizations.dart';
 import '../providers/language_provider.dart';
 
 /// A single row showing the abbreviated day-of-week labels.
-/// Saturday (last column) is highlighted red per Nepali convention.
+/// Saturday and Sunday (weekend) are highlighted per Nepali convention.
 class WeekdayRow extends ConsumerWidget {
   const WeekdayRow({super.key});
 
@@ -19,7 +19,7 @@ class WeekdayRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         children: List.generate(7, (index) {
-          final isSaturday = index == 6;
+          final isWeekend = index == 0 || index == 6;
           return Expanded(
             child: Center(
               child: Container(
@@ -27,7 +27,7 @@ class WeekdayRow extends ConsumerWidget {
                   horizontal: 6,
                   vertical: 4,
                 ),
-                decoration: isSaturday
+                decoration: isWeekend
                     ? BoxDecoration(
                         color: AppTheme.saturday.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
@@ -38,7 +38,7 @@ class WeekdayRow extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isSaturday
+                    color: isWeekend
                         ? AppTheme.saturday
                         : colors.textSecondary,
                   ),
