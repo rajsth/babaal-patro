@@ -71,6 +71,22 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/nepali_date_widget_info" />
         </receiver>
+
+        <!-- Small 1x1 widget showing BS date, month, year -->
+        <receiver
+            android:name=".NepaliDateSmallWidget"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nepali_date_small_widget_info" />
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

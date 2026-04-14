@@ -9,6 +9,7 @@ class HomeWidgetUpdater {
   HomeWidgetUpdater._();
 
   static const _androidWidgetName = 'NepaliDateWidget';
+  static const _androidSmallWidgetName = 'NepaliDateSmallWidget';
   static const _iOSSmallWidgetName = 'NepaliDateWidget';
   static const _iOSMediumWidgetName = 'NepaliDateWidgetMedium';
   static const _appGroupId = 'group.com.babaal.patro';
@@ -56,6 +57,9 @@ class HomeWidgetUpdater {
     await HomeWidget.updateWidget(
       androidName: _androidWidgetName,
       iOSName: _iOSMediumWidgetName,
+    );
+    await HomeWidget.updateWidget(
+      androidName: _androidSmallWidgetName,
     );
   }
 }
