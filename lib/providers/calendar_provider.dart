@@ -35,7 +35,7 @@ class CalendarState {
     return CalendarState(
       year: year ?? this.year,
       month: month ?? this.month,
-      today: today,
+      today: NepaliDateHelper.today(),
       selectedDate: clearSelection ? null : (selectedDate ?? this.selectedDate),
       slideDirection: slideDirection ?? SlideDirection.none,
     );
