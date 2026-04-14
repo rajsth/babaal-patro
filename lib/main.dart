@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,11 +20,21 @@ import 'screens/converter_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/analytics_service.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ── Crashlytics setup (mobile only — not supported on web) ────────────
+  if (!kIsWeb) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   final calendarData = CalendarDataService();
   await calendarData.initialize();
@@ -83,6 +96,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  static const _screenNames = ['calendar', 'reminders', 'converter', 'settings'];
   int _currentIndex = 0;
   bool _showSplash = true;
 
@@ -109,6 +123,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       return SplashScreen(
         onComplete: () {
           setState(() => _showSplash = false);
+          ref.read(analyticsServiceProvider).logScreenView('calendar');
           if (!kIsWeb) _checkForUpdate();
         },
       );
@@ -150,7 +165,10 @@ class _AppShellState extends ConsumerState<AppShell> {
   ) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        setState(() => _currentIndex = index);
+        ref.read(analyticsServiceProvider).logScreenView(_screenNames[index]);
+      },
       behavior: HitTestBehavior.opaque,
       child: Container(
         constraints: const BoxConstraints(minWidth: 72),

@@ -9,6 +9,7 @@ import '../models/reminder.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/reminders_provider.dart';
+import '../services/analytics_service.dart';
 import '../widgets/add_event_dialog.dart' show showAddReminderSheet;
 
 int _compareReminders(Reminder a, Reminder b) {
@@ -93,7 +94,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               child: FilledButton.icon(
                 onPressed: () async {
                   Navigator.pop(ctx);
-                  await ref.read(authProvider.notifier).signInWithGoogle();
+                  final ok = await ref.read(authProvider.notifier).signInWithGoogle();
+                  ref.read(analyticsServiceProvider).logSignIn(success: ok);
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.accent,
@@ -232,6 +234,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   final ok = await ref
                       .read(authProvider.notifier)
                       .signInWithGoogle();
+                  ref.read(analyticsServiceProvider).logSignIn(success: ok);
                   if (!ok && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(s.signInFailed)),
