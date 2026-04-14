@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_small_background"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- Nepali day number — large, accent color -->
+    <TextView
+        android:id="@+id/tv_nepali_day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="--"
+        android:textColor="#FFB388FF"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-black"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali month + year — smaller, white -->
+    <TextView
+        android:id="@+id/tv_nepali_month_year"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="---"
+        android:textColor="#DDFFFFFF"
+        android:textSize="11sp"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false" />
+
+    <!-- Nepali day name — muted -->
+    <TextView
+        android:id="@+id/tv_nepali_day_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:text="---"
+        android:textColor="#77FFFFFF"
+        android:textSize="10sp"
+        android:includeFontPadding="false" />
+
+</LinearLayout>
