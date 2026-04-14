@@ -301,8 +301,8 @@ class S {
   String get checkForUpdates =>
       isNepali ? 'अपडेट जाँच गर्नुहोस्' : 'Check for updates';
   String get checkForUpdatesSubtitle => isNepali
-      ? 'GitHub बाट नयाँ संस्करण खोज्नुहोस्'
-      : 'Check GitHub for a new version';
+      ? 'नयाँ संस्करण जाँच गर्नुहोस्'
+      : 'Check for a new version';
   String get noUpdateAvailable => isNepali
       ? 'तपाईंसँग पछिल्लो संस्करण छ'
       : 'You have the latest version';
