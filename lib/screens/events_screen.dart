@@ -235,7 +235,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                       .read(authProvider.notifier)
                       .signInWithGoogle();
                   ref.read(analyticsServiceProvider).logSignIn(success: ok);
-                  if (!ok && mounted) {
+                  if (!ok && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(s.signInFailed)),
                     );
