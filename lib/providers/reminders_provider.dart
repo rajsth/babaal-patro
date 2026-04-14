@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/reminder.dart';
+import '../services/analytics_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 import 'auth_provider.dart';
@@ -99,6 +100,10 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
   Future<void> addReminder(Reminder reminder) async {
     state = [...state, reminder];
     await _persist();
+    _ref.read(analyticsServiceProvider).logReminderCreated(
+      category: reminder.category.name,
+      recurrence: reminder.recurrence.name,
+    );
     await _notifications.scheduleReminder(reminder);
     final uid = _ref.read(authProvider)?.uid;
     if (uid != null) {
@@ -126,6 +131,7 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
   Future<void> removeReminder(String id) async {
     state = state.where((r) => r.id != id).toList();
     await _persist();
+    _ref.read(analyticsServiceProvider).logReminderDeleted();
     try {
       await _notifications.cancelReminder(id);
     } catch (_) {}

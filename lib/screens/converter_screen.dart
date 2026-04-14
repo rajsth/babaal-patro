@@ -6,6 +6,7 @@ import '../core/app_theme.dart';
 import '../core/app_localizations.dart';
 import '../core/nepali_date_helper.dart';
 import '../providers/language_provider.dart';
+import '../services/analytics_service.dart';
 
 /// Screen for converting dates between AD (Gregorian) and BS (Bikram Sambat).
 class ConverterScreen extends ConsumerStatefulWidget {
@@ -76,6 +77,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
             '${NepaliDateHelper.localizedNumeral(nepaliDate.year, isNepali: isNepali)}, '
             '${s.dayFullNames[nepaliDate.weekday - 1]}';
       });
+      ref.read(analyticsServiceProvider).logDateConverted(direction: 'ad_to_bs');
     } catch (_) {
       setState(() {
         _adToBsResult = s.invalidDate;
@@ -102,6 +104,7 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen>
             '${days[adDate.weekday - 1]}, '
             '${months[adDate.month - 1]} ${adDate.day}, ${adDate.year}';
       });
+      ref.read(analyticsServiceProvider).logDateConverted(direction: 'bs_to_ad');
     } catch (_) {
       setState(() {
         _bsToAdResult = s.invalidDate;

@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/analytics_service.dart';
 import '../widgets/update_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -68,6 +69,10 @@ class SettingsScreen extends ConsumerWidget {
                           ref
                               .read(settingsProvider.notifier)
                               .setAccentColor(index);
+                          ref.read(analyticsServiceProvider).logSettingChanged(
+                            setting: 'accent_color',
+                            value: index.toString(),
+                          );
                           Navigator.pop(ctx);
                         },
                         child: Column(
@@ -155,6 +160,7 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () async {
                 final ok =
                     await ref.read(authProvider.notifier).signInWithGoogle();
+                ref.read(analyticsServiceProvider).logSignIn(success: ok);
                 if (!ok && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(s.signInFailed)),
@@ -171,7 +177,13 @@ class SettingsScreen extends ConsumerWidget {
             title: s.language,
             subtitle: isNepali ? s.nepali : s.english,
             colors: colors,
-            onTap: () => ref.read(languageProvider.notifier).toggle(),
+            onTap: () {
+              ref.read(languageProvider.notifier).toggle();
+              ref.read(analyticsServiceProvider).logSettingChanged(
+                setting: 'language',
+                value: ref.read(languageProvider) ? 'nepali' : 'english',
+              );
+            },
           ),
           const SizedBox(height: 12),
           // Theme toggle
@@ -184,7 +196,13 @@ class SettingsScreen extends ConsumerWidget {
                 ? s.switchToLight
                 : s.switchToDark,
             colors: colors,
-            onTap: () => ref.read(themeProvider.notifier).toggle(),
+            onTap: () {
+              ref.read(themeProvider.notifier).toggle();
+              ref.read(analyticsServiceProvider).logSettingChanged(
+                setting: 'theme',
+                value: ref.read(themeProvider) == ThemeMode.dark ? 'dark' : 'light',
+              );
+            },
           ),
           const SizedBox(height: 12),
           // Grid border toggle
@@ -197,8 +215,13 @@ class SettingsScreen extends ConsumerWidget {
                 : s.showGridBorder,
             subtitle: s.gridBorderSubtitle,
             colors: colors,
-            onTap: () =>
-                ref.read(settingsProvider.notifier).toggleGridBorder(),
+            onTap: () {
+              ref.read(settingsProvider.notifier).toggleGridBorder();
+              ref.read(analyticsServiceProvider).logSettingChanged(
+                setting: 'grid_border',
+                value: ref.read(settingsProvider).showGridBorder ? 'on' : 'off',
+              );
+            },
           ),
           const SizedBox(height: 12),
           // Check for updates
@@ -397,7 +420,10 @@ class _AccountTile extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () => ref.read(authProvider.notifier).signOut(),
+              onPressed: () {
+                ref.read(analyticsServiceProvider).logSignOut();
+                ref.read(authProvider.notifier).signOut();
+              },
               child: Text(
                 s.signOut,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 13),
