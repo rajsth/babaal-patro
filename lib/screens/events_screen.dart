@@ -12,13 +12,36 @@ import '../providers/reminders_provider.dart';
 import '../services/analytics_service.dart';
 import '../widgets/add_event_dialog.dart' show showAddReminderSheet;
 
-int _compareReminders(Reminder a, Reminder b) {
-  if (a.isEnabled != b.isEnabled) return a.isEnabled ? -1 : 1;
+bool _isUpcoming(Reminder r, NepaliDateTime today) {
+  if (r.recurrence == ReminderRecurrence.daily ||
+      r.recurrence == ReminderRecurrence.weekly ||
+      r.recurrence == ReminderRecurrence.monthly ||
+      r.recurrence == ReminderRecurrence.yearly) {
+    return true;
+  }
+  final cmp = r.bsYear != today.year
+      ? r.bsYear - today.year
+      : r.bsMonth != today.month
+          ? r.bsMonth - today.month
+          : r.bsDay - today.day;
+  return cmp >= 0;
+}
+
+int _dateCompareAsc(Reminder a, Reminder b) {
   if (a.bsYear != b.bsYear) return a.bsYear - b.bsYear;
   if (a.bsMonth != b.bsMonth) return a.bsMonth - b.bsMonth;
   if (a.bsDay != b.bsDay) return a.bsDay - b.bsDay;
   if (a.hour != b.hour) return a.hour - b.hour;
   return a.minute - b.minute;
+}
+
+int _compareReminders(Reminder a, Reminder b, NepaliDateTime today) {
+  if (a.isEnabled != b.isEnabled) return a.isEnabled ? -1 : 1;
+  final aUp = _isUpcoming(a, today);
+  final bUp = _isUpcoming(b, today);
+  if (aUp != bUp) return aUp ? -1 : 1;
+  // Upcoming: nearest first (ascending). Past: most recent first (descending).
+  return aUp ? _dateCompareAsc(a, b) : _dateCompareAsc(b, a);
 }
 
 /// Reminders screen — lists all scheduled local-notification reminders.
@@ -135,8 +158,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     final isNepali = ref.watch(languageProvider);
     final s = S.of(isNepali);
 
+    final today = NepaliDateHelper.today();
     final sorted = ref.watch(
-      remindersProvider.select((list) => [...list]..sort(_compareReminders)),
+      remindersProvider.select(
+        (list) => [...list]..sort((a, b) => _compareReminders(a, b, today)),
+      ),
     );
     final user = ref.watch(authProvider);
 
