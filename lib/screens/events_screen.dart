@@ -258,27 +258,72 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 
             // ── Reminder list ────────────────────────────────────────
             Expanded(
-              child: visible.isEmpty
-                  ? _EmptyState(filtered: _activeFilter != null, isNepali: isNepali)
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                      itemCount: visible.length,
-                      itemBuilder: (context, i) {
-                        final reminder = visible[i];
-                        return _ReminderTile(
-                          key: ValueKey(reminder.id),
-                          reminder: reminder,
-                          colors: colors,
+              child: user != null
+                  ? RefreshIndicator(
+                      color: AppTheme.accent,
+                      onRefresh: () => ref
+                          .read(remindersProvider.notifier)
+                          .refreshFromCloud(),
+                      child: visible.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
+                                  child: _EmptyState(
+                                    filtered: _activeFilter != null,
+                                    isNepali: isNepali,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                              itemCount: visible.length,
+                              itemBuilder: (context, i) {
+                                final reminder = visible[i];
+                                return _ReminderTile(
+                                  key: ValueKey(reminder.id),
+                                  reminder: reminder,
+                                  colors: colors,
+                                  isNepali: isNepali,
+                                  onDelete: () {
+                                    Haptic.light();
+                                    ref
+                                        .read(remindersProvider.notifier)
+                                        .removeReminder(reminder.id);
+                                  },
+                                );
+                              },
+                            ),
+                    )
+                  : visible.isEmpty
+                      ? _EmptyState(
+                          filtered: _activeFilter != null,
                           isNepali: isNepali,
-                          onDelete: () {
-                            Haptic.light();
-                            ref
-                                .read(remindersProvider.notifier)
-                                .removeReminder(reminder.id);
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                          itemCount: visible.length,
+                          itemBuilder: (context, i) {
+                            final reminder = visible[i];
+                            return _ReminderTile(
+                              key: ValueKey(reminder.id),
+                              reminder: reminder,
+                              colors: colors,
+                              isNepali: isNepali,
+                              onDelete: () {
+                                Haptic.light();
+                                ref
+                                    .read(remindersProvider.notifier)
+                                    .removeReminder(reminder.id);
+                              },
+                            );
                           },
-                        );
-                      },
-                    ),
+                        ),
             ),
           ],
         ),

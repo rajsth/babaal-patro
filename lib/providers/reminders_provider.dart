@@ -141,6 +141,12 @@ class RemindersNotifier extends StateNotifier<List<Reminder>> {
     }
   }
 
+  /// Pull-to-refresh: re-sync with Firestore. No-op if not signed in.
+  Future<void> refreshFromCloud() async {
+    final uid = _ref.read(authProvider)?.uid;
+    if (uid != null) await _syncWithFirestore(uid);
+  }
+
   Future<void> toggleReminder(String id) async {
     state = [
       for (final r in state)
