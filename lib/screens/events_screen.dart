@@ -35,13 +35,57 @@ int _dateCompareAsc(Reminder a, Reminder b) {
   return a.minute - b.minute;
 }
 
+/// Sortable (year, month, day, hour, minute) key for the next occurrence
+/// of [r] on or after [today]. For recurring reminders the original bsYear
+/// (e.g. birth year) is ignored — only the next upcoming date matters.
+List<int> _nextOccurrenceKey(Reminder r, NepaliDateTime today) {
+  switch (r.recurrence) {
+    case ReminderRecurrence.daily:
+      return [today.year, today.month, today.day, r.hour, r.minute];
+    case ReminderRecurrence.weekly:
+      final origAd =
+          NepaliDateTime(r.bsYear, r.bsMonth, r.bsDay).toDateTime();
+      final todayAd = today.toDateTime();
+      final offset = (origAd.weekday - todayAd.weekday + 7) % 7;
+      final nextAd = todayAd.add(Duration(days: offset));
+      final nextBs =
+          NepaliDateHelper.adToBS(nextAd.year, nextAd.month, nextAd.day);
+      return [nextBs.year, nextBs.month, nextBs.day, r.hour, r.minute];
+    case ReminderRecurrence.monthly:
+      final passed = today.day > r.bsDay;
+      var year = today.year;
+      var month = today.month + (passed ? 1 : 0);
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+      return [year, month, r.bsDay, r.hour, r.minute];
+    case ReminderRecurrence.yearly:
+      final passed = today.month > r.bsMonth ||
+          (today.month == r.bsMonth && today.day > r.bsDay);
+      final year = passed ? today.year + 1 : today.year;
+      return [year, r.bsMonth, r.bsDay, r.hour, r.minute];
+    case ReminderRecurrence.none:
+    case ReminderRecurrence.once:
+      return [r.bsYear, r.bsMonth, r.bsDay, r.hour, r.minute];
+  }
+}
+
 int _compareReminders(Reminder a, Reminder b, NepaliDateTime today) {
   if (a.isEnabled != b.isEnabled) return a.isEnabled ? -1 : 1;
   final aUp = _isUpcoming(a, today);
   final bUp = _isUpcoming(b, today);
   if (aUp != bUp) return aUp ? -1 : 1;
-  // Upcoming: nearest first (ascending). Past: most recent first (descending).
-  return aUp ? _dateCompareAsc(a, b) : _dateCompareAsc(b, a);
+  if (aUp) {
+    final ka = _nextOccurrenceKey(a, today);
+    final kb = _nextOccurrenceKey(b, today);
+    for (var i = 0; i < ka.length; i++) {
+      if (ka[i] != kb[i]) return ka[i] - kb[i];
+    }
+    return 0;
+  }
+  // Past: most recent first (descending).
+  return _dateCompareAsc(b, a);
 }
 
 /// Reminders screen — lists all scheduled local-notification reminders.
