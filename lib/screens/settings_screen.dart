@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
@@ -223,21 +224,23 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: 12),
-          // Check for updates
-          _SettingsTile(
-            icon: Icons.system_update_outlined,
-            title: s.checkForUpdates,
-            subtitle: s.checkForUpdatesSubtitle,
-            colors: colors,
-            onTap: () {
-              ref.read(appUpdateProvider.notifier).checkForUpdate(force: true);
-              showDialog(
-                context: context,
-                builder: (_) => const UpdateDialog(),
-              );
-            },
-          ),
+          if (defaultTargetPlatform == TargetPlatform.android) ...[
+            const SizedBox(height: 12),
+            // Check for updates
+            _SettingsTile(
+              icon: Icons.system_update_outlined,
+              title: s.checkForUpdates,
+              subtitle: s.checkForUpdatesSubtitle,
+              colors: colors,
+              onTap: () {
+                ref.read(appUpdateProvider.notifier).checkForUpdate(force: true);
+                showDialog(
+                  context: context,
+                  builder: (_) => const UpdateDialog(),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 12),
           // Accent color picker
           _SettingsTile(
