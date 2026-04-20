@@ -192,8 +192,31 @@ class S {
       isNepali ? '$monthNameका बिदाहरू' : 'Holidays in $monthName';
   String gate(String num) => isNepali ? '$num गते' : num;
   String get todayLabel => isNepali ? 'आज' : 'Today';
-  String daysAgo(String n) => isNepali ? '$n दिन अगाडि' : '$n days ago';
-  String daysLater(String n) => isNepali ? '$n दिन पछि' : 'in $n days';
+  String daysAgo(String n) => isNepali
+      ? '$n दिन अगाडि'
+      : (n == '1' ? '1 day ago' : '$n days ago');
+  String daysLater(String n) => isNepali
+      ? '$n दिन पछि'
+      : (n == '1' ? 'in 1 day' : 'in $n days');
+  String weeksAgo(String n) => isNepali
+      ? '$n हप्ता अगाडि'
+      : (n == '1' ? '1 week ago' : '$n weeks ago');
+  String weeksLater(String n) => isNepali
+      ? '$n हप्ता पछि'
+      : (n == '1' ? 'in 1 week' : 'in $n weeks');
+  String monthsAgo(String n) => isNepali
+      ? '$n महिना अगाडि'
+      : (n == '1' ? '1 month ago' : '$n months ago');
+  String monthsLater(String n) => isNepali
+      ? '$n महिना पछि'
+      : (n == '1' ? 'in 1 month' : 'in $n months');
+  String yearsAgo(String n) => isNepali
+      ? '$n वर्ष अगाडि'
+      : (n == '1' ? '1 year ago' : '$n years ago');
+  String yearsLater(String n) => isNepali
+      ? '$n वर्ष पछि'
+      : (n == '1' ? 'in 1 year' : 'in $n years');
+  String turnsAge(String n) => isNepali ? '$n वर्ष पुग्दै' : 'Turns $n';
   String get yesterdayLabel => isNepali ? 'हिजो' : 'Yesterday';
   String get tomorrowLabel => isNepali ? 'भोलि' : 'Tomorrow';
 

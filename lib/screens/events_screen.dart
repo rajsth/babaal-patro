@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../core/haptic_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,6 +73,104 @@ List<int> _nextOccurrenceKey(Reminder r, NepaliDateTime today) {
   }
 }
 
+int _dayDiff(List<int> key, NepaliDateTime today) {
+  final ad = NepaliDateTime(key[0], key[1], key[2]).toDateTime();
+  final tAd = today.toDateTime();
+  return DateTime.utc(ad.year, ad.month, ad.day)
+      .difference(DateTime.utc(tAd.year, tAd.month, tAd.day))
+      .inDays;
+}
+
+/// Both labels for a reminder tile's proximity/annotation line.
+typedef _ReminderLabels = ({String? annotation, String? relative});
+
+/// Builds the proximity label (near/far in calendar units) and an optional
+/// annotation (turns-N for birthdays, Nth-year for anniversaries).
+///
+/// Design rules:
+/// - Daily reminders: skipped entirely ("Today" is tautological).
+/// - Recurring: always look forward — showing "X ago" for a yearly
+///   birthday is misleading since it's also 365-X away.
+/// - Bucketing uses BS calendar diffs; weeks only fill the gap when the
+///   BS month hasn't rolled over (e.g. same-month reminders 7-27 days out).
+/// - Age for birthdays/anniversaries is computed from AD years (matches
+///   real-world age counts; BS-year diff can be off by 1 near New Year).
+/// - Suppresses the annotation when `bsYear` looks like a placeholder
+///   (equal to or after today's BS year).
+_ReminderLabels _reminderLabels(
+    Reminder r, NepaliDateTime today, S s, bool isNepali) {
+  if (r.recurrence == ReminderRecurrence.daily) {
+    return (annotation: null, relative: null);
+  }
+
+  final isRecurring = r.recurrence != ReminderRecurrence.none &&
+      r.recurrence != ReminderRecurrence.once;
+
+  final key = isRecurring
+      ? _nextOccurrenceKey(r, today)
+      : [r.bsYear, r.bsMonth, r.bsDay, r.hour, r.minute];
+  final diff = _dayDiff(key, today);
+  final absDays = diff.abs();
+  final past = diff < 0;
+  final monthDiff =
+      ((key[0] - today.year) * 12 + (key[1] - today.month)).abs();
+
+  String n(int v) => NepaliDateHelper.localizedNumeral(v, isNepali: isNepali);
+
+  final String relative;
+  if (diff == 0) {
+    relative = s.todayLabel;
+  } else if (diff == 1) {
+    relative = s.tomorrowLabel;
+  } else if (diff == -1) {
+    relative = s.yesterdayLabel;
+  } else if (absDays <= 6) {
+    relative = past ? s.daysAgo(n(absDays)) : s.daysLater(n(absDays));
+  } else if (monthDiff >= 12) {
+    final y = monthDiff ~/ 12;
+    relative = past ? s.yearsAgo(n(y)) : s.yearsLater(n(y));
+  } else if (monthDiff >= 1) {
+    relative = past ? s.monthsAgo(n(monthDiff)) : s.monthsLater(n(monthDiff));
+  } else {
+    // 7-27 days inside the same BS month — weeks read more naturally.
+    final w = absDays ~/ 7;
+    relative = past ? s.weeksAgo(n(w)) : s.weeksLater(n(w));
+  }
+
+  String? annotation;
+  if (r.recurrence == ReminderRecurrence.yearly && r.bsYear < today.year) {
+    final originalAd =
+        NepaliDateTime(r.bsYear, r.bsMonth, r.bsDay).toDateTime();
+    final nextAd = NepaliDateTime(key[0], key[1], key[2]).toDateTime();
+    final age = nextAd.year - originalAd.year;
+    if (age >= 1) {
+      if (r.category == ReminderCategory.birthday) {
+        annotation = s.turnsAge(n(age));
+      } else if (r.category == ReminderCategory.anniversary) {
+        annotation = _anniversaryLabel(age, isNepali);
+      }
+    }
+  }
+
+  return (annotation: annotation, relative: relative);
+}
+
+String _anniversaryLabel(int years, bool isNepali) {
+  final n = NepaliDateHelper.localizedNumeral(years, isNepali: isNepali);
+  if (isNepali) return '$n औँ वर्ष';
+  return '$n${_enOrdinalSuffix(years)} year';
+}
+
+String _enOrdinalSuffix(int v) {
+  if (v % 100 >= 11 && v % 100 <= 13) return 'th';
+  return switch (v % 10) {
+    1 => 'st',
+    2 => 'nd',
+    3 => 'rd',
+    _ => 'th',
+  };
+}
+
 int _compareReminders(Reminder a, Reminder b, NepaliDateTime today) {
   if (a.isEnabled != b.isEnabled) return a.isEnabled ? -1 : 1;
   final aUp = _isUpcoming(a, today);
@@ -99,6 +199,28 @@ class EventsScreen extends ConsumerStatefulWidget {
 class _EventsScreenState extends ConsumerState<EventsScreen> {
   ReminderCategory? _activeFilter;
   bool _bannerDismissed = false;
+  Timer? _dayTicker;
+  int _lastBsDay = NepaliDateHelper.today().day;
+
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild once per minute iff the BS day has rolled over so "Today",
+    // "Tomorrow", and the relative countdowns don't go stale past midnight.
+    _dayTicker = Timer.periodic(const Duration(minutes: 1), (_) {
+      final d = NepaliDateHelper.today().day;
+      if (d != _lastBsDay && mounted) {
+        _lastBsDay = d;
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _dayTicker?.cancel();
+    super.dispose();
+  }
 
   void _showBackupNudge() {
     final colors = Theme.of(context).extension<NepaliThemeColors>()!;
@@ -268,6 +390,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         ? sorted
         : sorted.where((r) => r.category == _activeFilter).toList();
 
+    // Precompute the proximity/annotation labels once per render so each
+    // tile build doesn't re-run the BS→AD conversion chain.
+    final labelCache = <String, _ReminderLabels>{
+      for (final r in visible)
+        r.id: _reminderLabels(r, today, s, isNepali),
+    };
+
     final usedCategories = {for (final r in sorted) r.category};
     final showBanner = user == null && sorted.isNotEmpty && !_bannerDismissed;
 
@@ -358,6 +487,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 return _ReminderTile(
                                   key: ValueKey(reminder.id),
                                   reminder: reminder,
+                                  labels: labelCache[reminder.id]!,
                                   colors: colors,
                                   isNepali: isNepali,
                                   onDelete: () {
@@ -383,6 +513,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             return _ReminderTile(
                               key: ValueKey(reminder.id),
                               reminder: reminder,
+                              labels: labelCache[reminder.id]!,
                               colors: colors,
                               isNepali: isNepali,
                               onDelete: () {
@@ -604,6 +735,7 @@ class _EmptyState extends StatelessWidget {
 
 class _ReminderTile extends StatelessWidget {
   final Reminder reminder;
+  final _ReminderLabels labels;
   final NepaliThemeColors colors;
   final bool isNepali;
   final VoidCallback onDelete;
@@ -611,6 +743,7 @@ class _ReminderTile extends StatelessWidget {
   const _ReminderTile({
     super.key,
     required this.reminder,
+    required this.labels,
     required this.colors,
     required this.isNepali,
     required this.onDelete,
@@ -735,25 +868,52 @@ class _ReminderTile extends StatelessWidget {
                               color: colors.textSecondary,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              _bsDateStr,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colors.textSecondary,
+                            Flexible(
+                              child: Text(
+                                adDateStr.isEmpty
+                                    ? _bsDateStr
+                                    : '$_bsDateStr  ·  $adDateStr',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.textSecondary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (adDateStr.isNotEmpty)
-                              Text(
-                                '  ·  $adDateStr',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: colors.textSecondary.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
+                        if (labels.relative != null ||
+                            labels.annotation != null) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              if (labels.relative != null)
+                                Text(
+                                  labels.relative!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.accent,
+                                  ),
+                                ),
+                              if (labels.relative != null &&
+                                  labels.annotation != null)
+                                const SizedBox(width: 8),
+                              if (labels.annotation != null)
+                                Flexible(
+                                  child: Text(
+                                    labels.annotation!,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: colors.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 6,
@@ -769,12 +929,6 @@ class _ReminderTile extends StatelessWidget {
                               label: reminder.recurrence.localizedLabel(isNepali),
                               colors: colors,
                             ),
-                            if (reminder.alertOffset != AlertOffset.atTime)
-                              _InfoBadge(
-                                icon: Icons.alarm_rounded,
-                                label: reminder.alertOffset.localizedLabel(isNepali),
-                                colors: colors,
-                              ),
                           ],
                         ),
                       ],
