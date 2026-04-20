@@ -81,6 +81,7 @@ firebase.json
 
 # Claude Code (keep agents/ tracked, ignore local settings)
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Personal dev notes
 instruction.txt

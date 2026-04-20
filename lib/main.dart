@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
@@ -124,7 +124,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         onComplete: () {
           setState(() => _showSplash = false);
           ref.read(analyticsServiceProvider).logScreenView('calendar');
-          if (!kIsWeb) _checkForUpdate();
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) _checkForUpdate();
         },
       );
     }
